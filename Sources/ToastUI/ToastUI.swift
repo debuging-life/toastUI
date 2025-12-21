@@ -1,29 +1,10 @@
 
 import SwiftUI
 
-public struct Toast: Equatable {
-    public enum ToastType {
-        case success
-        case error
-        case warning
-        case info
-    }
-    
-    public let message: String
-    public let type: ToastType
-    public let duration: TimeInterval
-    
-    public init(message: String, type: ToastType, duration: TimeInterval = 3) {
-        self.message = message
-        self.type = type
-        self.duration = duration
-    }
-}
-
 public struct ToastView: View {
-    let toast: Toast
+    let toast: ToastModel
     
-    public init(toast: Toast) {
+    public init(toast: ToastModel) {
         self.toast = toast
     }
     
@@ -64,4 +45,8 @@ public struct ToastView: View {
         case .info: return .blue
         }
     }
+}
+
+#Preview {
+    ToastView(toast: ToastModel(message: "Test", type: .success))
 }

@@ -9,14 +9,14 @@ import SwiftUI
 
 @MainActor
 public class ToastManager: ObservableObject {
-    @Published public var toast: Toast?
+    @Published public var toast: ToastModel?
     
     public static let shared = ToastManager()
     
     private init() {}
     
-    public func show(_ message: String, type: Toast.ToastType = .info, duration: TimeInterval = 3.0) {
-        toast = Toast(message: message, type: type, duration: duration)
+    public func show(_ message: String, type: ToastModel.ToastType = .info, duration: TimeInterval = 3.0) {
+        toast = ToastModel(message: message, type: type, duration: duration)
     }
     
     public func showSuccess(_ message: String, duration: TimeInterval = 3.0) {

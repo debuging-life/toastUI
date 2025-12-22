@@ -15,11 +15,13 @@ public struct ToastModifier: ViewModifier {
     }
     
     public func body(content: Content) -> some View {
-        content
-            .overlay(alignment: overlayAlignment) {
+        ZStack(alignment: overlayAlignment) {
+                content
+
                 if let toast = toast {
                     ToastView(toast: toast)
                         .transition(transitionForAlignment(toast.alignment))
+                        .padding(paddingForAlignment(toast.alignment))
                         .onAppear {
                             DispatchQueue.main.asyncAfter(deadline: .now() + toast.duration) {
                                 withAnimation {
@@ -27,9 +29,9 @@ public struct ToastModifier: ViewModifier {
                                 }
                             }
                         }
-                        .padding(paddingForAlignment(toast.alignment))
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .animation(.spring(), value: toast)
     }
     

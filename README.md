@@ -38,14 +38,14 @@ https://github.com/user-attachments/assets/093dc837-9f03-4cb5-8369-543c931411ee
 ### Swift Package Manager
 
 1. In Xcode, select **File** → **Add Package Dependencies**
-2. Enter the package URL: `https://github.com/yourusername/ToastPackage.git`
-3. Select **Up to Next Major Version** with `1.0.0`
+2. Enter the package URL: `https://github.com/debuging-life/ToastUI.git`
+3. Select **Up to Next Major Version** with `3.1.1`
 4. Click **Add Package**
 
 Or add it to your `Package.swift`:
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/ToastPackage.git", from: "1.0.0")
+    .package(url: "https://github.com/debuging-life/ToastUI.git", from: "3.1.1")
 ]
 ```
 

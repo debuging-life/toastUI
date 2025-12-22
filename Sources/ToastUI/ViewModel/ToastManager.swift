@@ -1,10 +1,9 @@
 //
-//  File.swift
+//  ToastManager.swift
 //  ToastUI
 //
 //  Created by Pardip Bhatti on 28/11/25.
 //
-
 
 import SwiftUI
 
@@ -25,7 +24,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         alignment: ToastAlignment = .top,
         backgroundColor: Color? = nil,
         configuration: ToastConfiguration = .default,
-        showCloseButton: Bool = true
+        showCloseButton: Bool = true,
+        enableCopy: Bool = false
     ) {
         presentToast(
             ToastMessage(
@@ -36,7 +36,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
                 alignment: alignment,
                 backgroundColor: backgroundColor,
                 configuration: configuration,
-                showCloseButton: showCloseButton
+                showCloseButton: showCloseButton,
+                enableCopy: enableCopy
             )
         )
     }
@@ -53,6 +54,7 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         backgroundColor: Color? = nil,
         configuration: ToastConfiguration = .default,
         showCloseButton: Bool = true,
+        enableCopy: Bool = false,
         @ViewBuilder icon: () -> Icon
     ) {
         presentToast(
@@ -65,6 +67,7 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
                 backgroundColor: backgroundColor,
                 configuration: configuration,
                 showCloseButton: showCloseButton,
+                enableCopy: enableCopy,
                 icon: icon
             )
         )
@@ -74,20 +77,24 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
     
     @MainActor
     private func presentToast(_ toast: ToastMessage) {
-        // For progress toasts, remove any existing progress toasts with same alignment
+        // For progress toasts, check if one already exists for this alignment
         if toast.type == .progress {
-            let progressToastsToRemove = toasts.filter {
-                $0.type == .progress && $0.alignment == toast.alignment
-            }
-            for progressToast in progressToastsToRemove {
-                workItems[progressToast.id]?.cancel()
-                workItems.removeValue(forKey: progressToast.id)
-            }
-            toasts.removeAll {
-                $0.type == .progress && $0.alignment == toast.alignment
+            if let existingIndex = toasts.firstIndex(where: { $0.type == .progress && $0.alignment == toast.alignment }) {
+                // Update existing progress toast WITHOUT animation
+                var updatedToast = toasts[existingIndex]
+                updatedToast.updateTitle(toast.title)
+                toasts[existingIndex] = updatedToast
+                return // Don't create a new toast
+            } else {
+                // No existing progress toast, create new one (with animation)
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    toasts.append(toast)
+                }
+                return // Progress toasts don't have timers
             }
         }
         
+        // For non-progress toasts, add with animation
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             toasts.append(toast)
         }
@@ -99,10 +106,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             workItems.removeValue(forKey: existingToast.id)
         }
         
-        // Only schedule auto-dismiss for non-progress toasts
-        if toast.type != .progress {
-            scheduleAutoDismiss(for: toast)
-        }
+        // Schedule auto-dismiss for non-progress toasts
+        scheduleAutoDismiss(for: toast)
     }
     
     @MainActor
@@ -131,7 +136,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         alignment: ToastAlignment = .top,
         backgroundColor: Color? = nil,
         configuration: ToastConfiguration = .default,
-        showCloseButton: Bool = true
+        showCloseButton: Bool = true,
+        enableCopy: Bool = false
     ) {
         present(
             title: title,
@@ -141,7 +147,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             alignment: alignment,
             backgroundColor: backgroundColor,
             configuration: configuration,
-            showCloseButton: showCloseButton
+            showCloseButton: showCloseButton,
+            enableCopy: enableCopy
         )
     }
     
@@ -153,7 +160,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         alignment: ToastAlignment = .top,
         backgroundColor: Color? = nil,
         configuration: ToastConfiguration = .default,
-        showCloseButton: Bool = true
+        showCloseButton: Bool = true,
+        enableCopy: Bool = false
     ) {
         present(
             title: title,
@@ -163,7 +171,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             alignment: alignment,
             backgroundColor: backgroundColor,
             configuration: configuration,
-            showCloseButton: showCloseButton
+            showCloseButton: showCloseButton,
+            enableCopy: enableCopy
         )
     }
     
@@ -175,7 +184,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         alignment: ToastAlignment = .top,
         backgroundColor: Color? = nil,
         configuration: ToastConfiguration = .default,
-        showCloseButton: Bool = true
+        showCloseButton: Bool = true,
+        enableCopy: Bool = false
     ) {
         present(
             title: title,
@@ -185,7 +195,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             alignment: alignment,
             backgroundColor: backgroundColor,
             configuration: configuration,
-            showCloseButton: showCloseButton
+            showCloseButton: showCloseButton,
+            enableCopy: enableCopy
         )
     }
     
@@ -197,7 +208,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         alignment: ToastAlignment = .top,
         backgroundColor: Color? = nil,
         configuration: ToastConfiguration = .default,
-        showCloseButton: Bool = true
+        showCloseButton: Bool = true,
+        enableCopy: Bool = false
     ) {
         present(
             title: title,
@@ -207,7 +219,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             alignment: alignment,
             backgroundColor: backgroundColor,
             configuration: configuration,
-            showCloseButton: showCloseButton
+            showCloseButton: showCloseButton,
+            enableCopy: enableCopy
         )
     }
     
@@ -226,7 +239,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             alignment: alignment,
             backgroundColor: backgroundColor,
             configuration: configuration,
-            showCloseButton: false // Progress toasts never have close button
+            showCloseButton: false,
+            enableCopy: false
         )
     }
     
@@ -250,7 +264,6 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         if let alignment = alignment,
            let newTopToast = toasts.filter({ $0.alignment == alignment }).last,
            newTopToast.type != .progress {
-            // Always schedule, don't check if workItem exists
             scheduleAutoDismiss(for: newTopToast)
         }
     }

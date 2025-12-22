@@ -53,7 +53,7 @@ dependencies: [
 
 ### 1. Setup (One-time)
 
-Add `.setupToast()` to your root view in your App file:
+Add `.setupToastUI()` to your root view in your App file:
 ```swift
 import SwiftUI
 import ToastUI
@@ -945,14 +945,14 @@ public struct ToastConfiguration {
 
 ### Toast not showing?
 
-Make sure `.setupToast()` is in your root view:
+Make sure `.setupToastUI()` is in your root view:
 ```swift
 @main
 struct MyApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .setupToast() // ← Required!
+                .setupToastUI() // ← Required!
         }
     }
 }
@@ -973,31 +973,31 @@ The close button should work on all toasts. If not:
 
 ### Animations look weird?
 
-This usually means multiple `.setupToast()` calls. Only call it once at the root:
+This usually means multiple `.setupToastUI()` calls. Only call it once at the root:
 ```swift
 // ✅ Correct
 ContentView()
-    .setupToast()
+    .setupToastUI()
 
 // ❌ Wrong - don't call multiple times
 ContentView()
-    .setupToast()
+    .setupToastUI()
     .someView()
-    .setupToast() // Remove this!
+    .setupToastUI() // Remove this!
 ```
 
 ### Using with multiple windows?
 
-Each window needs its own `.setupToast()`:
+Each window needs its own `.setupToastUI()`:
 ```swift
 WindowGroup {
     ContentView()
-        .setupToast()
+        .setupToastUI()
 }
 
 WindowGroup("Settings") {
     SettingsView()
-        .setupToast()
+        .setupToastUI()
 }
 ```
 

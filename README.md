@@ -46,7 +46,7 @@ https://github.com/user-attachments/assets/dbba4945-59e7-473b-ba64-7b959b42ce5a
 - iOS 16.0+
 - Swift 6.2+
 - Xcode 16.2+
-- macOS 14.0+ (Sonoma)
+- macOS 13.0+
 
 ## Installation
 

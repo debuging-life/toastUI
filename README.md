@@ -56,7 +56,7 @@ dependencies: [
 Add `.setupToast()` to your root view in your App file:
 ```swift
 import SwiftUI
-import ToastPackage
+import ToastUI
 
 @main
 struct YourApp: App {
@@ -72,7 +72,7 @@ struct YourApp: App {
 ### 2. Use in Views
 ```swift
 import SwiftUI
-import ToastPackage
+import ToastUI
 
 struct ContentView: View {
     @Environment(\.toast) var toast
@@ -542,7 +542,7 @@ Button("Ultimate Toast") {
 ### Method 1: Pass as Parameter (Recommended)
 ```swift
 import SwiftUI
-import ToastPackage
+import ToastUI
 
 class DataViewModel: ObservableObject {
     @Published var data: [String] = []

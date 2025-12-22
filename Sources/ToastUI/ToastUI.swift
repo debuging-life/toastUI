@@ -1,52 +1,93 @@
 
+//
+//  ToastView.swift
+//  ToastPackage
+//
+//
+//  ToastView.swift
+//  ToastPackage
+//
+
 import SwiftUI
 
-public struct ToastView: View {
-    let toast: ToastModel
+struct ToastView: View {
+    let toast: ToastMessage
+    let onDismiss: () -> Void
     
-    public init(toast: ToastModel) {
-        self.toast = toast
+    private var effectiveBackgroundColor: Color {
+        toast.backgroundColor ?? toast.type.color
     }
     
-    public var body: some View {
+    var body: some View {
+        if toast.type == .progress {
+            progressView
+        } else {
+            standardView
+        }
+    }
+    
+    // MARK: - Progress View (Simplified)
+    private var progressView: some View {
         HStack(spacing: 12) {
-            Image(systemName: iconName)
-                .foregroundColor(.white)
-                .font(.system(size: 20))
+            ProgressView()
+                .tint(.white)
             
-            Text(toast.message)
-                .foregroundColor(.white)
-                .font(.body)
-                .fontWeight(.medium)
+            Text(toast.title)
+                .font(.headline)
+                .foregroundStyle(.white)
             
             Spacer()
         }
         .padding()
-        .background(backgroundColor)
-        .cornerRadius(12)
-        .shadow(radius: 10)
-        .padding(.horizontal, 20)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(effectiveBackgroundColor.gradient)
+                .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
+        )
+        .padding(.horizontal)
     }
     
-    private var iconName: String {
-        switch toast.type {
-        case .success: return "checkmark.circle.fill"
-        case .error: return "xmark.circle.fill"
-        case .warning: return "exclamationmark.triangle.fill"
-        case .info: return "info.circle.fill"
+    // MARK: - Standard View (with icon and optional message)
+    private var standardView: some View {
+        HStack(spacing: 12) {
+            // Icon (custom or default)
+            if let customIcon = toast.customIcon {
+                customIcon
+                    .frame(width: 24, height: 24)
+            } else {
+                Image(systemName: toast.type.defaultIcon)
+                    .font(.title2)
+                    .foregroundStyle(.white)
+            }
+            
+            // Content
+            VStack(alignment: .leading, spacing: 4) {
+                Text(toast.title)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                
+                if let message = toast.message {
+                    Text(message)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+            }
+            
+            Spacer()
+            
+            // Dismiss button
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.7))
+            }
         }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(effectiveBackgroundColor.gradient)
+                .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
+        )
+        .padding(.horizontal)
     }
-    
-    private var backgroundColor: Color {
-        switch toast.type {
-        case .success: return .green
-        case .error: return .red
-        case .warning: return .orange
-        case .info: return .blue
-        }
-    }
-}
-
-#Preview {
-    ToastView(toast: ToastModel(message: "Test", type: .success))
 }

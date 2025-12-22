@@ -4,74 +4,58 @@
 //
 //  Created by Pardip Bhatti on 28/11/25.
 //
+//
+//  ToastViewModifier.swift
+//  ToastPackage
+//
 
 import SwiftUI
 
-public struct ToastModifier: ViewModifier {
-    @Binding var toast: ToastModel?
+struct ToastViewModifier: ViewModifier {
+    @StateObject private var toastManager = ToastManager()
     
-    public init(toast: Binding<ToastModel?>) {
-        self._toast = toast
+    func body(content: Content) -> some View {
+        ZStack {
+            content
+            
+            toastOverlay
+        }
+        .environment(\.toast, toastManager)
     }
     
-    public func body(content: Content) -> some View {
-        ZStack(alignment: overlayAlignment) {
-                content
-                if let toast = toast {
-                    ToastView(toast: toast)
-                        .transition(transitionForAlignment(toast.alignment))
-                        .padding(paddingForAlignment(toast.alignment))
-                        .onAppear {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + toast.duration) {
-                                withAnimation {
-                                    self.toast = nil
-                                }
-                            }
-                        }
+    @ViewBuilder
+    private var toastOverlay: some View {
+        if let toast = toastManager.currentToast {
+            VStack(spacing: 0) {
+                if toast.alignment == .top {
+                    toastView(toast)
+                        .padding(.top, 8)
+                    Spacer(minLength: 0)
+                } else if toast.alignment == .center {
+                    Spacer(minLength: 0)
+                    toastView(toast)
+                    Spacer(minLength: 0)
+                } else { 
+                    Spacer(minLength: 0)
+                    toastView(toast)
+                        .padding(.bottom, 8)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .animation(.spring(), value: toast)
-    }
-    
-    private var overlayAlignment: Alignment {
-        guard let toast = toast else { return .top }
-        
-        switch toast.alignment {
-        case .top:
-            return .top
-        case .bottom:
-            return .bottom
-        case .center:
-            return .center
+            .transition(
+                .asymmetric(
+                    insertion: .move(edge: toast.alignment.edge).combined(with: .opacity),
+                    removal: .move(edge: toast.alignment.edge).combined(with: .opacity)
+                )
+            )
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: toastManager.currentToast?.id)
+            .zIndex(999)
         }
     }
     
-    private func transitionForAlignment(_ alignment: ToastModel.ToastAlignment) -> AnyTransition {
-        switch alignment {
-        case .top:
-            return .move(edge: .top).combined(with: .opacity)
-        case .bottom:
-            return .move(edge: .bottom).combined(with: .opacity)
-        case .center:
-            return .scale.combined(with: .opacity)
+    @ViewBuilder
+    private func toastView(_ toast: ToastMessage) -> some View {
+        ToastView(toast: toast) {
+            toastManager.dismiss()
         }
-    }
-    
-    private func paddingForAlignment(_ alignment: ToastModel.ToastAlignment) -> EdgeInsets {
-        switch alignment {
-        case .top:
-            return EdgeInsets(top: 40, leading: 0, bottom: 0, trailing: 0)
-        case .bottom:
-            return EdgeInsets(top: 0, leading: 0, bottom: 40, trailing: 0)
-        case .center:
-            return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-        }
-    }
-}
-
-public extension View {
-    func toast(_ toast: Binding<ToastModel?>) -> some View {
-        modifier(ToastModifier(toast: toast))
     }
 }

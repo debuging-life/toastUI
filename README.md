@@ -7,6 +7,7 @@ A powerful, all-in-one notification and dialog system for SwiftUI with toasts, d
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 https://github.com/user-attachments/assets/bef65af7-a544-4396-83aa-c99411154cc4
+
 https://github.com/user-attachments/assets/dbba4945-59e7-473b-ba64-7b959b42ce5a
 
 ## Features ✨

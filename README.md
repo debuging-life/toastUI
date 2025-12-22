@@ -3,7 +3,7 @@
 A powerful, highly customizable toast notification system for SwiftUI with automatic root view attachment, stacking support, and environment-based API.
 
 ![Platform](https://img.shields.io/badge/platform-iOS%2016%2B%20%7C%20macOS%2013%2B-blue)
-![Swift](https://img.shields.io/badge/Swift-5.9-orange)
+![Swift](https://img.shields.io/badge/Swift-6.2+-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 https://github.com/user-attachments/assets/093dc837-9f03-4cb5-8369-543c931411ee

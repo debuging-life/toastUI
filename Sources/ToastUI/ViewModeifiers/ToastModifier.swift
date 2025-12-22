@@ -17,7 +17,6 @@ public struct ToastModifier: ViewModifier {
     public func body(content: Content) -> some View {
         ZStack(alignment: overlayAlignment) {
                 content
-
                 if let toast = toast {
                     ToastView(toast: toast)
                         .transition(transitionForAlignment(toast.alignment))
@@ -62,9 +61,9 @@ public struct ToastModifier: ViewModifier {
     private func paddingForAlignment(_ alignment: ToastModel.ToastAlignment) -> EdgeInsets {
         switch alignment {
         case .top:
-            return EdgeInsets(top: 50, leading: 0, bottom: 0, trailing: 0)
+            return EdgeInsets(top: 40, leading: 0, bottom: 0, trailing: 0)
         case .bottom:
-            return EdgeInsets(top: 0, leading: 0, bottom: 50, trailing: 0)
+            return EdgeInsets(top: 0, leading: 0, bottom: 40, trailing: 0)
         case .center:
             return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         }

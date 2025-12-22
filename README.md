@@ -6,7 +6,8 @@ A powerful, all-in-one notification and dialog system for SwiftUI with toasts, d
 ![Swift](https://img.shields.io/badge/Swift-6.2+-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-https://github.com/user-attachments/assets/093dc837-9f03-4cb5-8369-543c931411ee
+https://github.com/user-attachments/assets/bef65af7-a544-4396-83aa-c99411154cc4
+https://github.com/user-attachments/assets/dbba4945-59e7-473b-ba64-7b959b42ce5a
 
 ## Features ✨
 
@@ -45,6 +46,7 @@ https://github.com/user-attachments/assets/093dc837-9f03-4cb5-8369-543c931411ee
 - iOS 16.0+
 - Swift 6.2+
 - Xcode 16.2+
+- macOS 14.0+ (Sonoma)
 
 ## Installation
 

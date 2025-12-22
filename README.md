@@ -57,7 +57,7 @@ struct YourApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .setupToast() // ✅ One-time setup
+                .setupToastUI() // ✅ One-time setup
         }
     }
 }

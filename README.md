@@ -1,6 +1,6 @@
 # ToastUI 🎉
 
-A lightweight, highly customizable toast notification system for SwiftUI with automatic root view attachment and environment-based API.
+A powerful, highly customizable toast notification system for SwiftUI with automatic root view attachment, stacking support, and environment-based API.
 
 ![Platform](https://img.shields.io/badge/platform-iOS%2016%2B%20%7C%20macOS%2013%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
@@ -13,9 +13,13 @@ A lightweight, highly customizable toast notification system for SwiftUI with au
 - 📍 **3 Alignments** - Top, Center, Bottom
 - 🎭 **Custom Icons** - Use any SwiftUI View as icon
 - 🌈 **Custom Colors** - Override default colors with your brand colors
+- 🎨 **Custom Styling** - Configure corner radius, shadows, padding
 - 💬 **Optional Message** - Title-only or title + message
-- ⏱️ **Auto-dismiss** - Configurable duration with smooth animations
-- 🔄 **Progress Toast** - Simplified UI for long-running operations
+- 📚 **Multiple Toasts** - Stack toasts with visual depth effect
+- 🔄 **FILO Behavior** - First In, Last Out (newest dismisses first)
+- ❌ **Optional Close Button** - Show/hide close button per toast
+- ⏱️ **Smart Auto-dismiss** - Proper timer management with stacking
+- 🎯 **Progress Toast** - Single, non-stacking progress indicator
 - 📱 **SwiftUI Native** - Built with SwiftUI, no UIKit dependencies
 - 🚀 **Easy Integration** - One-time setup, use anywhere
 - 🧩 **ViewModel Support** - Works seamlessly with ViewModels
@@ -81,16 +85,16 @@ struct ContentView: View {
 
 That's it! No additional setup needed. 🎊
 
-## Usage Examples
+## Core Features
 
-### Basic Toast Types
+### Toast Types
 ```swift
-struct BasicToastExamples: View {
+struct ToastTypesExample: View {
     @Environment(\.toast) var toast
     
     var body: some View {
         VStack(spacing: 20) {
-            // Success Toast
+            // Success Toast (Green)
             Button("Success") {
                 toast.success(
                     title: "Success!",
@@ -98,7 +102,7 @@ struct BasicToastExamples: View {
                 )
             }
             
-            // Error Toast
+            // Error Toast (Red)
             Button("Error") {
                 toast.error(
                     title: "Error",
@@ -106,7 +110,7 @@ struct BasicToastExamples: View {
                 )
             }
             
-            // Warning Toast
+            // Warning Toast (Orange)
             Button("Warning") {
                 toast.warning(
                     title: "Warning",
@@ -114,7 +118,7 @@ struct BasicToastExamples: View {
                 )
             }
             
-            // Info Toast
+            // Info Toast (Blue)
             Button("Info") {
                 toast.info(
                     title: "Did you know?",
@@ -122,11 +126,11 @@ struct BasicToastExamples: View {
                 )
             }
             
-            // Progress Toast (auto-simplified UI)
+            // Progress Toast (Purple - No auto-dismiss)
             Button("Progress") {
                 toast.progress(title: "Loading...")
                 
-                // Dismiss after work
+                // Must dismiss manually
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     toast.dismiss()
                 }
@@ -137,81 +141,230 @@ struct BasicToastExamples: View {
 }
 ```
 
-### Title-Only Toasts (No Message)
+### Multiple Toasts & Stacking
+
+Toasts stack on top of each other with a beautiful card-stacking effect. Users can see up to 3 toasts at once, with a visual depth effect.
 ```swift
-struct TitleOnlyExamples: View {
+struct StackingExample: View {
     @Environment(\.toast) var toast
     
     var body: some View {
         VStack(spacing: 20) {
-            Button("Quick Success") {
-                toast.success(title: "Saved!")
+            Button("Add Single Toast") {
+                toast.success(title: "Toast #1", duration: 5.0)
             }
             
-            Button("Quick Error") {
-                toast.error(title: "Failed")
+            Button("Stack 5 Toasts") {
+                for i in 1...5 {
+                    toast.success(
+                        title: "Toast #\(i)",
+                        message: "Stacking beautifully",
+                        duration: 8.0
+                    )
+                }
             }
             
-            Button("Quick Info") {
-                toast.info(title: "Settings updated")
-            }
+            Text("Toasts stack with scale & offset effect")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        .padding()
     }
 }
+```
+
+**Visual Effect:**
+```
+┌─────────────────────────┐  ← Newest (100% size)
+│ Toast 3                 │
+└─────────────────────────┘
+  ┌───────────────────────┐  ← 2nd (95% size, +8pt offset)
+  │ Toast 2               │
+  └───────────────────────┘
+    ┌─────────────────────┐  ← 3rd (90% size, +16pt offset)
+    │ Toast 1             │
+    └─────────────────────┘
+```
+
+### FILO Behavior (First In, Last Out)
+
+Toasts dismiss in reverse order - the newest toast dismisses first, then the next newest, etc.
+```swift
+Button("Test FILO") {
+    toast.success(title: "First (5s)", duration: 5.0)
+    toast.info(title: "Second (3s)", duration: 3.0)
+    toast.warning(title: "Third (4s)", duration: 4.0)
+}
+// Dismisses: Third (4s) → Second (3s) → First (5s)
 ```
 
 ### Toast Alignment
 ```swift
-struct AlignmentExamples: View {
+struct AlignmentExample: View {
     @Environment(\.toast) var toast
     
     var body: some View {
         VStack(spacing: 20) {
-            // Top (default)
-            Button("Top Toast") {
+            Button("Top (Default)") {
                 toast.success(
-                    title: "Top Position",
-                    message: "This appears at the top",
+                    title: "Top Toast",
                     alignment: .top
                 )
             }
             
-            // Center
-            Button("Center Toast") {
+            Button("Center") {
                 toast.warning(
-                    title: "Center Position",
-                    message: "This appears in the center",
+                    title: "Center Toast",
                     alignment: .center
                 )
             }
             
-            // Bottom
-            Button("Bottom Toast") {
+            Button("Bottom") {
                 toast.info(
-                    title: "Bottom Position",
-                    message: "This appears at the bottom",
+                    title: "Bottom Toast",
                     alignment: .bottom
                 )
             }
         }
-        .padding()
     }
 }
 ```
 
-### Custom Background Colors
+### Optional Message
 ```swift
-struct CustomColorExamples: View {
+// Title only
+toast.success(title: "Saved!")
+
+// Title + Message
+toast.success(
+    title: "Saved!",
+    message: "Your changes have been saved successfully"
+)
+```
+
+### Custom Duration
+```swift
+// Short toast (1 second)
+toast.success(title: "Quick!", duration: 1.0)
+
+// Long toast (10 seconds)
+toast.error(title: "Important", message: "Read carefully", duration: 10.0)
+```
+
+### Optional Close Button
+```swift
+// With close button (default)
+toast.success(
+    title: "Dismissible",
+    message: "Click X to close"
+)
+
+// Without close button
+toast.info(
+    title: "Auto-dismiss only",
+    duration: 3.0,
+    showCloseButton: false
+)
+
+// Progress toasts NEVER have close button
+toast.progress(title: "Loading...") // No close button
+```
+
+### Manual Dismiss
+```swift
+// Dismiss the topmost toast
+toast.dismiss()
+
+// Dismiss all toasts
+toast.dismissAll()
+```
+
+## Advanced Features
+
+### Custom Styling
+
+Use `ToastConfiguration` to customize appearance:
+```swift
+struct CustomStylingExample: View {
+    @Environment(\.toast) var toast
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Pre-defined styles
+            Button("Default Style") {
+                toast.success(
+                    title: "Default",
+                    configuration: .default
+                )
+            }
+            
+            Button("Compact Style") {
+                toast.success(
+                    title: "Compact",
+                    configuration: .compact
+                )
+            }
+            
+            Button("Rounded Style") {
+                toast.success(
+                    title: "Very Rounded",
+                    configuration: .rounded
+                )
+            }
+            
+            Button("Minimal Style") {
+                toast.info(
+                    title: "Minimal",
+                    configuration: .minimal
+                )
+            }
+            
+            // Custom configuration
+            Button("Fully Custom") {
+                let customConfig = ToastConfiguration(
+                    cornerRadius: 25,
+                    shadowRadius: 20,
+                    shadowColor: .purple.opacity(0.3),
+                    shadowX: 0,
+                    shadowY: 10,
+                    horizontalPadding: 20,
+                    verticalPadding: 20
+                )
+                
+                toast.success(
+                    title: "Custom Style",
+                    message: "Unique appearance",
+                    configuration: customConfig
+                )
+            }
+        }
+    }
+}
+```
+
+**Available Configuration Options:**
+```swift
+ToastConfiguration(
+    cornerRadius: CGFloat = 12,
+    shadowRadius: CGFloat = 10,
+    shadowColor: Color = .black.opacity(0.2),
+    shadowX: CGFloat = 0,
+    shadowY: CGFloat = 5,
+    horizontalPadding: CGFloat = 16,
+    verticalPadding: CGFloat = 16
+)
+```
+
+### Custom Colors
+```swift
+struct CustomColorsExample: View {
     @Environment(\.toast) var toast
     
     var body: some View {
         VStack(spacing: 20) {
             // Custom solid color
-            Button("Pink Background") {
+            Button("Pink Toast") {
                 toast.success(
-                    title: "Custom Color",
-                    message: "This has a pink background",
+                    title: "Custom Pink",
                     backgroundColor: .pink
                 )
             }
@@ -219,8 +372,7 @@ struct CustomColorExamples: View {
             // Brand color
             Button("Brand Color") {
                 toast.info(
-                    title: "Branded Toast",
-                    message: "Using your brand color",
+                    title: "Branded",
                     backgroundColor: Color(hex: "#6366f1")
                 )
             }
@@ -229,24 +381,10 @@ struct CustomColorExamples: View {
             Button("Transparent") {
                 toast.warning(
                     title: "Semi-transparent",
-                    message: "With opacity",
                     backgroundColor: .purple.opacity(0.7)
                 )
             }
-            
-            // Custom progress color
-            Button("Custom Progress") {
-                toast.progress(
-                    title: "Loading...",
-                    backgroundColor: .indigo
-                )
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    toast.dismiss()
-                }
-            }
         }
-        .padding()
     }
 }
 
@@ -258,30 +396,19 @@ extension Color {
         Scanner(string: hex).scanHexInt64(&int)
         let a, r, g, b: UInt64
         switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (255, 0, 0, 0)
+        case 3: (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default: (a, r, g, b) = (255, 0, 0, 0)
         }
-        
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue:  Double(b) / 255,
-            opacity: Double(a) / 255
-        )
+        self.init(.sRGB, red: Double(r)/255, green: Double(g)/255, blue: Double(b)/255, opacity: Double(a)/255)
     }
 }
 ```
 
 ### Custom Icons
 ```swift
-struct CustomIconExamples: View {
+struct CustomIconsExample: View {
     @Environment(\.toast) var toast
     
     var body: some View {
@@ -290,7 +417,7 @@ struct CustomIconExamples: View {
             Button("Custom Icon") {
                 toast.present(
                     title: "New Message",
-                    message: "You have 3 unread messages",
+                    message: "You have mail",
                     type: .info
                 ) {
                     Image(systemName: "envelope.fill")
@@ -300,7 +427,7 @@ struct CustomIconExamples: View {
             }
             
             // Heart icon
-            Button("Heart Icon") {
+            Button("Heart") {
                 toast.present(
                     title: "Liked!",
                     type: .success
@@ -311,102 +438,98 @@ struct CustomIconExamples: View {
                 }
             }
             
-            // Custom view icon
-            Button("Badge Icon") {
+            // Custom view
+            Button("Badge") {
                 toast.present(
-                    title: "Achievement Unlocked!",
-                    message: "You've completed 10 tasks",
-                    type: .success,
-                    alignment: .center
+                    title: "Achievement!",
+                    message: "Level up!",
+                    type: .success
                 ) {
                     ZStack {
                         Circle()
                             .fill(.white.opacity(0.2))
                             .frame(width: 30, height: 30)
-                        
                         Image(systemName: "star.fill")
                             .foregroundStyle(.yellow)
                     }
                 }
             }
-            
-            // Custom icon with custom color
-            Button("Full Custom") {
-                toast.present(
-                    title: "Fully Customized",
-                    message: "Custom icon and color!",
-                    type: .info,
-                    backgroundColor: .teal
-                ) {
-                    Image(systemName: "sparkles")
-                        .font(.title2)
-                        .foregroundStyle(.yellow)
-                }
-            }
         }
-        .padding()
     }
 }
 ```
 
-### Custom Duration
-```swift
-Button("Long Toast") {
-    toast.success(
-        title: "Extended Duration",
-        message: "This will stay for 5 seconds",
-        duration: 5.0
-    )
-}
+### Progress Toast Behavior
 
-Button("Quick Toast") {
-    toast.info(
-        title: "Quick Message",
-        duration: 1.0
-    )
-}
-```
-
-### Manual Dismiss
+Progress toasts are special:
+- ✅ **Single per alignment** - New progress replaces old one
+- ✅ **No close button** - Must be dismissed programmatically
+- ✅ **No auto-dismiss** - Stays until you call `dismiss()`
+- ✅ **No stacking** - Always singular
 ```swift
-Button("Show & Dismiss") {
-    toast.progress(title: "Processing...")
-    
-    // Manually dismiss after 2 seconds
-    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-        toast.dismiss()
-        toast.success(title: "Complete!")
-    }
-}
-```
-
-### Async Operations
-```swift
-struct AsyncExampleView: View {
+struct ProgressExample: View {
     @Environment(\.toast) var toast
     
     var body: some View {
-        Button("Fetch Data") {
-            Task {
-                await fetchData()
+        VStack(spacing: 20) {
+            Button("Show Progress") {
+                toast.progress(title: "Processing...")
+                
+                Task {
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    toast.dismiss()
+                    toast.success(title: "Complete!")
+                }
+            }
+            
+            Button("Replace Progress") {
+                toast.progress(title: "First operation...")
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    // This replaces the first progress
+                    toast.progress(title: "Second operation...")
+                }
+            }
+            
+            Button("Multiple Alignments") {
+                // These DON'T replace each other (different alignments)
+                toast.progress(title: "Top", alignment: .top)
+                toast.progress(title: "Bottom", alignment: .bottom)
             }
         }
     }
+}
+```
+
+### Combining All Features
+```swift
+Button("Ultimate Toast") {
+    let customConfig = ToastConfiguration(
+        cornerRadius: 25,
+        shadowRadius: 20,
+        shadowColor: .purple.opacity(0.3),
+        shadowY: 10,
+        horizontalPadding: 24,
+        verticalPadding: 20
+    )
     
-    func fetchData() async {
-        toast.progress(title: "Loading data...")
-        
-        do {
-            try await Task.sleep(nanoseconds: 2_000_000_000)
-            toast.success(
-                title: "Success",
-                message: "Data loaded successfully!"
-            )
-        } catch {
-            toast.error(
-                title: "Error",
-                message: error.localizedDescription
-            )
+    toast.present(
+        title: "Fully Featured",
+        message: "All options enabled!",
+        type: .success,
+        duration: 5.0,
+        alignment: .center,
+        backgroundColor: Color(hex: "#FF6B6B"),
+        configuration: customConfig,
+        showCloseButton: true
+    ) {
+        ZStack {
+            Circle()
+                .fill(.white.opacity(0.3))
+                .frame(width: 35, height: 35)
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title)
+                .foregroundStyle(.white)
         }
     }
 }
@@ -423,7 +546,7 @@ class DataViewModel: ObservableObject {
     @Published var data: [String] = []
     
     func loadData(toast: ToastManager) async {
-        toast.progress(title: "Fetching data...", alignment: .bottom)
+        toast.progress(title: "Loading...", alignment: .bottom)
         
         do {
             try await Task.sleep(nanoseconds: 2_000_000_000)
@@ -479,14 +602,13 @@ class UserViewModel: ObservableObject {
         do {
             try await Task.sleep(nanoseconds: 1_500_000_000)
             user = User(email: email)
-            toast.success(title: "Welcome!", message: "Login successful")
+            toast.success(title: "Welcome!")
         } catch {
             toast.error(title: "Login Failed", message: error.localizedDescription)
         }
     }
 }
 
-// Wrapper view to inject toast
 struct LoginViewWrapper: View {
     @Environment(\.toast) var toast
     
@@ -503,10 +625,7 @@ struct LoginViewContent: View {
     var body: some View {
         VStack(spacing: 20) {
             TextField("Email", text: $email)
-                .textFieldStyle(.roundedBorder)
-            
             SecureField("Password", text: $password)
-                .textFieldStyle(.roundedBorder)
             
             Button("Login") {
                 Task {
@@ -533,7 +652,7 @@ struct SignupView: View {
         Form {
             TextField("Email", text: $email)
             SecureField("Password", text: $password)
-            SecureField("Confirm Password", text: $confirmPassword)
+            SecureField("Confirm", text: $confirmPassword)
             
             Button("Sign Up") {
                 validateAndSignUp()
@@ -543,17 +662,14 @@ struct SignupView: View {
     
     func validateAndSignUp() {
         guard !email.isEmpty else {
-            toast.warning(
-                title: "Email Required",
-                message: "Please enter your email"
-            )
+            toast.warning(title: "Email Required")
             return
         }
         
         guard password.count >= 8 else {
             toast.warning(
                 title: "Weak Password",
-                message: "Password must be at least 8 characters"
+                message: "Use at least 8 characters"
             )
             return
         }
@@ -566,10 +682,7 @@ struct SignupView: View {
             return
         }
         
-        toast.success(
-            title: "Account Created",
-            message: "Welcome aboard!"
-        )
+        toast.success(title: "Account Created!")
     }
 }
 ```
@@ -589,21 +702,21 @@ struct FileUploadView: View {
     
     func uploadFile() async {
         toast.progress(
-            title: "Uploading file...",
-            alignment: .bottom
+            title: "Uploading...",
+            alignment: .bottom,
+            configuration: .rounded
         )
         
         do {
             try await Task.sleep(nanoseconds: 3_000_000_000)
             toast.success(
                 title: "Upload Complete",
-                message: "File uploaded successfully",
-                alignment: .bottom
+                alignment: .bottom,
+                configuration: .rounded
             )
         } catch {
             toast.error(
                 title: "Upload Failed",
-                message: "Please try again",
                 alignment: .bottom
             )
         }
@@ -626,11 +739,11 @@ struct NetworkView: View {
     }
     
     func fetchWithRetry() async {
-        toast.progress(title: "Fetching data...")
+        toast.progress(title: "Fetching...")
         
         do {
-            try await performNetworkRequest()
-            toast.success(title: "Data loaded")
+            try await performRequest()
+            toast.success(title: "Data Loaded")
             retryCount = 0
         } catch {
             if retryCount < 3 {
@@ -651,13 +764,13 @@ struct NetworkView: View {
         }
     }
     
-    func performNetworkRequest() async throws {
+    func performRequest() async throws {
         try await Task.sleep(nanoseconds: 1_000_000_000)
     }
 }
 ```
 
-### Sequential Operations with Updates
+### Sequential Operations
 ```swift
 struct BatchOperationView: View {
     @Environment(\.toast) var toast
@@ -682,56 +795,26 @@ struct BatchOperationView: View {
         
         toast.success(
             title: "Complete!",
-            message: "Processed all \(items.count) items"
+            message: "Processed \(items.count) items"
         )
-    }
-}
-```
-
-### Combining All Features
-```swift
-struct FullFeatureExample: View {
-    @Environment(\.toast) var toast
-    
-    var body: some View {
-        Button("Ultimate Toast") {
-            toast.present(
-                title: "Fully Featured",
-                message: "Custom everything!",
-                type: .success,
-                duration: 4.0,
-                alignment: .center,
-                backgroundColor: Color(hex: "#FF6B6B")
-            ) {
-                ZStack {
-                    Circle()
-                        .fill(.white.opacity(0.3))
-                        .frame(width: 35, height: 35)
-                    
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title)
-                        .foregroundStyle(.white)
-                }
-            }
-        }
     }
 }
 ```
 
 ## API Reference
 
-### ToastManager
-
-#### Main Methods
+### ToastManager Methods
 ```swift
-// Generic present method
+// Generic present
 func present(
     title: String,
     message: String? = nil,
     type: ToastType,
     duration: TimeInterval = 3.0,
     alignment: ToastAlignment = .top,
-    backgroundColor: Color? = nil
+    backgroundColor: Color? = nil,
+    configuration: ToastConfiguration = .default,
+    showCloseButton: Bool = true
 )
 
 // Present with custom icon
@@ -742,70 +825,63 @@ func present<Icon: View>(
     duration: TimeInterval = 3.0,
     alignment: ToastAlignment = .top,
     backgroundColor: Color? = nil,
+    configuration: ToastConfiguration = .default,
+    showCloseButton: Bool = true,
     @ViewBuilder icon: () -> Icon
 )
-```
 
-#### Convenience Methods
-```swift
-func success(
-    title: String,
-    message: String? = nil,
-    duration: TimeInterval = 3.0,
-    alignment: ToastAlignment = .top,
-    backgroundColor: Color? = nil
-)
+// Convenience methods
+func success(title: String, message: String? = nil, duration: TimeInterval = 3.0, alignment: ToastAlignment = .top, backgroundColor: Color? = nil, configuration: ToastConfiguration = .default, showCloseButton: Bool = true)
 
-func error(
-    title: String,
-    message: String? = nil,
-    duration: TimeInterval = 3.0,
-    alignment: ToastAlignment = .top,
-    backgroundColor: Color? = nil
-)
+func error(title: String, message: String? = nil, duration: TimeInterval = 3.0, alignment: ToastAlignment = .top, backgroundColor: Color? = nil, configuration: ToastConfiguration = .default, showCloseButton: Bool = true)
 
-func warning(
-    title: String,
-    message: String? = nil,
-    duration: TimeInterval = 3.0,
-    alignment: ToastAlignment = .top,
-    backgroundColor: Color? = nil
-)
+func warning(title: String, message: String? = nil, duration: TimeInterval = 3.0, alignment: ToastAlignment = .top, backgroundColor: Color? = nil, configuration: ToastConfiguration = .default, showCloseButton: Bool = true)
 
-func info(
-    title: String,
-    message: String? = nil,
-    duration: TimeInterval = 3.0,
-    alignment: ToastAlignment = .top,
-    backgroundColor: Color? = nil
-)
+func info(title: String, message: String? = nil, duration: TimeInterval = 3.0, alignment: ToastAlignment = .top, backgroundColor: Color? = nil, configuration: ToastConfiguration = .default, showCloseButton: Bool = true)
 
-func progress(
-    title: String,
-    alignment: ToastAlignment = .top,
-    backgroundColor: Color? = nil
-)
+func progress(title: String, alignment: ToastAlignment = .top, backgroundColor: Color? = nil, configuration: ToastConfiguration = .default)
 
-func dismiss()
+// Dismiss methods
+func dismiss() // Dismisses topmost toast
+func dismissAll() // Dismisses all toasts
 ```
 
 ### ToastType
 ```swift
 public enum ToastType {
-    case success    // Green with checkmark (default)
-    case error      // Red with X mark (default)
-    case warning    // Orange with exclamation (default)
-    case info       // Blue with info icon (default)
-    case progress   // Purple with loading spinner (default)
+    case success    // Green with checkmark
+    case error      // Red with X mark
+    case warning    // Orange with exclamation
+    case info       // Blue with info icon
+    case progress   // Purple with spinner (no close button, single per alignment)
 }
 ```
 
 ### ToastAlignment
 ```swift
 public enum ToastAlignment {
-    case top        // Appears at top of screen
-    case center     // Appears in center of screen
-    case bottom     // Appears at bottom of screen
+    case top        // Appears at top
+    case center     // Appears in center
+    case bottom     // Appears at bottom
+}
+```
+
+### ToastConfiguration
+```swift
+public struct ToastConfiguration {
+    public let cornerRadius: CGFloat
+    public let shadowRadius: CGFloat
+    public let shadowColor: Color
+    public let shadowX: CGFloat
+    public let shadowY: CGFloat
+    public let horizontalPadding: CGFloat
+    public let verticalPadding: CGFloat
+    
+    // Pre-defined styles
+    public static let `default`: ToastConfiguration
+    public static let compact: ToastConfiguration
+    public static let rounded: ToastConfiguration
+    public static let minimal: ToastConfiguration
 }
 ```
 
@@ -819,7 +895,27 @@ public enum ToastAlignment {
 | Info | Blue |
 | Progress | Purple |
 
-*All colors can be overridden with the `backgroundColor` parameter*
+## Toast Behavior
+
+### Stacking Rules
+- Up to 3 toasts visible at once
+- Visual depth effect (scale + offset)
+- Newest toast on top (100% size)
+- Older toasts scaled down (95%, 90%)
+- 4+ toasts hidden but queued
+
+### Dismiss Behavior
+- **FILO** (First In, Last Out) - Newest dismisses first
+- **Auto-dismiss** - All toasts except progress
+- **Manual dismiss** - Click X button (if enabled)
+- **Timer management** - Paused when stacked, resumes when topmost
+
+### Progress Toast Special Rules
+- Only one progress per alignment
+- No close button
+- No auto-dismiss
+- Must be dismissed manually
+- Replaces existing progress
 
 ## Best Practices
 
@@ -829,68 +925,68 @@ public enum ToastAlignment {
 - Keep messages concise and actionable
 - Use progress toasts for operations over 1 second
 - Manually dismiss progress toasts when complete
-- Use custom durations for important messages
-- Use title-only toasts for quick feedback
+- Use title-only for quick feedback
 - Choose appropriate alignment based on context
 - Use custom colors for brand consistency
+- Show close button for long-duration toasts
 
 ### ❌ Don't
 
-- Don't show multiple toasts simultaneously (they replace each other)
 - Don't use toasts for critical errors requiring user action
 - Don't set extremely long durations (> 10 seconds)
 - Don't use toasts as primary navigation
 - Don't forget to dismiss progress toasts
 - Don't overuse custom colors (be consistent)
-
-## Customization Options
-
-| Feature | Options | Default |
-|---------|---------|---------|
-| **Type** | success, error, warning, info, progress | - |
-| **Alignment** | top, center, bottom | top |
-| **Duration** | Any TimeInterval | 3.0 seconds |
-| **Message** | Optional String | nil |
-| **Icon** | Any View | Type's default icon |
-| **Background** | Any Color | Type's default color |
+- Don't stack too many toasts (users get overwhelmed)
 
 ## Troubleshooting
 
 ### Toast not showing?
 
-Make sure you've added `.setupToast()` to your root view:
+Make sure `.setupToast()` is in your root view:
 ```swift
 @main
 struct MyApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .setupToast() // ← Don't forget this!
+                .setupToast() // ← Required!
         }
     }
 }
 ```
 
-### Toast showing behind other views?
+### Close button not working?
 
-The toast has a `zIndex` of 999, which should keep it on top. If you have custom overlays with higher `zIndex`, adjust accordingly.
+The close button should work on all toasts. If not:
+1. Make sure `showCloseButton: true` (default)
+2. Progress toasts never have close buttons
+3. Try clicking directly on the X icon
 
-### Custom icon not showing?
+### Toast stuck and won't dismiss?
 
-Make sure you're using the `present(icon:)` method:
+- Progress toasts must be dismissed manually: `toast.dismiss()`
+- Check if you have a long duration set
+- Try `toast.dismissAll()` to clear everything
+
+### Animations look weird?
+
+This usually means multiple `.setupToast()` calls. Only call it once at the root:
 ```swift
 // ✅ Correct
-toast.present(title: "Title", type: .success) {
-    Image(systemName: "custom.icon")
-}
+ContentView()
+    .setupToast()
 
-// ❌ Wrong
-toast.success(title: "Title") // This uses default icon
+// ❌ Wrong - don't call multiple times
+ContentView()
+    .setupToast()
+    .someView()
+    .setupToast() // Remove this!
 ```
 
 ### Using with multiple windows?
 
-Each window needs its own `.setupToast()` call:
+Each window needs its own `.setupToast()`:
 ```swift
 WindowGroup {
     ContentView()
@@ -905,29 +1001,48 @@ WindowGroup("Settings") {
 
 ## Migration Guide
 
-### From Version 1.0 to 2.0
+### From Basic Toast to Advanced
 
-**New Features:**
-- ✅ Optional message parameter
-- ✅ Alignment options
-- ✅ Custom icons
-- ✅ Custom background colors
-- ✅ Simplified progress view
-
-**Breaking Changes:**
-- None! All changes are backward compatible.
-
-**What's New:**
+**Old way:**
 ```swift
-// Old way (still works)
-toast.success(title: "Success", message: "It worked")
+toast.success(title: "Success")
+```
 
-// New ways (all work)
-toast.success(title: "Success") // No message
-toast.success(title: "Success", alignment: .bottom) // Custom alignment
-toast.success(title: "Success", backgroundColor: .pink) // Custom color
-toast.present(title: "Success", type: .success) { // Custom icon
+**New features available:**
+```swift
+// Optional message
+toast.success(title: "Success") // Still works!
+toast.success(title: "Success", message: "With details")
+
+// Custom alignment
+toast.success(title: "Success", alignment: .bottom)
+
+// Custom styling
+toast.success(title: "Success", configuration: .rounded)
+
+// Custom color
+toast.success(title: "Success", backgroundColor: .pink)
+
+// Hide close button
+toast.success(title: "Success", showCloseButton: false)
+
+// Custom icon
+toast.present(title: "Success", type: .success) {
     Image(systemName: "heart.fill")
+}
+
+// Everything combined
+toast.present(
+    title: "Success",
+    message: "All features!",
+    type: .success,
+    duration: 5.0,
+    alignment: .center,
+    backgroundColor: .pink,
+    configuration: .rounded,
+    showCloseButton: true
+) {
+    Image(systemName: "star.fill")
 }
 ```
 
@@ -936,11 +1051,18 @@ toast.present(title: "Success", type: .success) { // Custom icon
 - [ ] SwiftUI animations customization
 - [ ] Sound effects support
 - [ ] Haptic feedback
-- [ ] Queue system for multiple toasts
-- [ ] Custom corner radius
-- [ ] Swipe to dismiss
+- [ ] Swipe to dismiss gesture
+- [ ] Custom positions (offset from edges)
 - [ ] Accessibility improvements
 - [ ] macOS menu bar integration
+- [ ] Async/await dismiss callbacks
+
+## Performance
+
+- ✅ Lightweight - Minimal memory footprint
+- ✅ Efficient - Reuses views, cancels timers properly
+- ✅ Smooth - 60fps animations
+- ✅ Thread-safe - All operations on MainActor
 
 ## License
 
@@ -948,16 +1070,27 @@ MIT License - feel free to use in your projects!
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
 ## Author
 
-Pardip Bhatti - iOS Developer
+Pardip Bhatti - iOS Developer & Mobile Architect
 
 ## Acknowledgments
 
 Built with ❤️ using SwiftUI
 
+Special thanks to the SwiftUI community for inspiration and feedback.
+
 ---
 
-**Star ⭐ this repo if you find it useful!**
+**If you find this package useful, please ⭐ star the repo!**
+
+**Questions or issues?** Open an issue on GitHub or reach out on Twitter.
+
+**Want to support development?** Consider sponsoring the project on GitHub Sponsors.

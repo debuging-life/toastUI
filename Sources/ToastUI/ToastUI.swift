@@ -3,10 +3,7 @@
 //  ToastView.swift
 //  ToastPackage
 //
-//
-//  ToastView.swift
-//  ToastPackage
-//
+
 
 import SwiftUI
 
@@ -26,7 +23,7 @@ struct ToastView: View {
         }
     }
     
-    // MARK: - Progress View (Simplified)
+    // MARK: - Progress View (Simplified - No Close Button)
     private var progressView: some View {
         HStack(spacing: 12) {
             ProgressView()
@@ -38,11 +35,17 @@ struct ToastView: View {
             
             Spacer()
         }
-        .padding()
+        .padding(.horizontal, toast.configuration.horizontalPadding)
+        .padding(.vertical, toast.configuration.verticalPadding)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: toast.configuration.cornerRadius)
                 .fill(effectiveBackgroundColor.gradient)
-                .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
+                .shadow(
+                    color: toast.configuration.shadowColor,
+                    radius: toast.configuration.shadowRadius,
+                    x: toast.configuration.shadowX,
+                    y: toast.configuration.shadowY
+                )
         )
         .padding(.horizontal)
     }
@@ -75,18 +78,26 @@ struct ToastView: View {
             
             Spacer()
             
-            // Dismiss button
-            Button(action: onDismiss) {
-                Image(systemName: "xmark")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
+            // Dismiss button (optional)
+            if toast.showCloseButton {
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.7))
+                }
             }
         }
-        .padding()
+        .padding(.horizontal, toast.configuration.horizontalPadding)
+        .padding(.vertical, toast.configuration.verticalPadding)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: toast.configuration.cornerRadius)
                 .fill(effectiveBackgroundColor.gradient)
-                .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
+                .shadow(
+                    color: toast.configuration.shadowColor,
+                    radius: toast.configuration.shadowRadius,
+                    x: toast.configuration.shadowX,
+                    y: toast.configuration.shadowY
+                )
         )
         .padding(.horizontal)
     }

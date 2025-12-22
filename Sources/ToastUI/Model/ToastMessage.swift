@@ -5,6 +5,7 @@
 //  Created by Pardip Bhatti on 21/12/25.
 //
 
+
 import SwiftUI
 
 public struct ToastMessage: Identifiable, Equatable {
@@ -16,6 +17,8 @@ public struct ToastMessage: Identifiable, Equatable {
     public let alignment: ToastAlignment
     public let customIcon: AnyView?
     public let backgroundColor: Color?
+    public let configuration: ToastConfiguration
+    public let showCloseButton: Bool
     
     public init(
         title: String,
@@ -24,7 +27,9 @@ public struct ToastMessage: Identifiable, Equatable {
         duration: TimeInterval = 3.0,
         alignment: ToastAlignment = .top,
         customIcon: AnyView? = nil,
-        backgroundColor: Color? = nil
+        backgroundColor: Color? = nil,
+        configuration: ToastConfiguration = .default,
+        showCloseButton: Bool = true
     ) {
         self.title = title
         self.message = message
@@ -33,6 +38,8 @@ public struct ToastMessage: Identifiable, Equatable {
         self.alignment = alignment
         self.customIcon = customIcon
         self.backgroundColor = backgroundColor
+        self.configuration = configuration
+        self.showCloseButton = showCloseButton
     }
     
     public static func == (lhs: ToastMessage, rhs: ToastMessage) -> Bool {
@@ -49,6 +56,8 @@ public extension ToastMessage {
         duration: TimeInterval = 3.0,
         alignment: ToastAlignment = .top,
         backgroundColor: Color? = nil,
+        configuration: ToastConfiguration = .default,
+        showCloseButton: Bool = true,
         @ViewBuilder icon: () -> Icon
     ) {
         self.init(
@@ -58,7 +67,9 @@ public extension ToastMessage {
             duration: duration,
             alignment: alignment,
             customIcon: AnyView(icon()),
-            backgroundColor: backgroundColor
+            backgroundColor: backgroundColor,
+            configuration: configuration,
+            showCloseButton: showCloseButton
         )
     }
 }

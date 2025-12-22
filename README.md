@@ -6,6 +6,8 @@ A powerful, highly customizable toast notification system for SwiftUI with autom
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+https://github.com/user-attachments/assets/093dc837-9f03-4cb5-8369-543c931411ee
+
 ## Features ✨
 
 - 🎯 **Simple API** - Just `@Environment(\.toast) var toast`

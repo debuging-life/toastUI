@@ -29,9 +29,9 @@ https://github.com/user-attachments/assets/093dc837-9f03-4cb5-8369-543c931411ee
 
 ## Requirements
 
-- iOS 16.0+ / macOS 13.0+
-- Swift 5.9+
-- Xcode 15.0+
+- iOS 16.0+
+- Swift 6.2+
+- Xcode 16.2+
 
 ## Installation
 

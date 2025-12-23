@@ -1,47 +1,45 @@
 //
-//  File.swift
+//  ToastViewModifier.swift
 //  ToastUI
 //
 //  Created by Pardip Bhatti on 28/11/25.
 //
-//
-//  ToastViewModifier.swift
-//  ToastPackage
-//
+
 
 import SwiftUI
 
 struct ToastViewModifier: ViewModifier {
-    @StateObject private var toastManager = ToastManager()
+    @ObservedObject var manager: ToastManager
+    
+    init(manager: ToastManager) {
+        self.manager = manager
+    }
     
     func body(content: Content) -> some View {
-        ZStack {
-            content
-            
-            // Toast container - ALWAYS present
-            VStack(spacing: 0) {
-                // Top toasts section - ALWAYS present
-                topToastsSection
-                
-                Spacer(minLength: 0)
-                
-                // Center toasts section - ALWAYS present
-                centerToastsSection
-                
-                Spacer(minLength: 0)
-                
-                // Bottom toasts section - ALWAYS present
-                bottomToastsSection
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .zIndex(999)
+        content
+    }
+}
+
+// MARK: - Toast Window Root View
+
+struct ToastWindowRootView: View {
+    @ObservedObject var manager: ToastManager
+    @ObservedObject var windowManager: ToastWindowManager
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            topToastsSection
+            Spacer(minLength: 0)
+            centerToastsSection
+            Spacer(minLength: 0)
+            bottomToastsSection
         }
-        .environment(\.toast, toastManager)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     @ViewBuilder
     private var topToastsSection: some View {
-        let topToasts = toastManager.toasts.filter { $0.alignment == .top }
+        let topToasts = manager.toasts.filter { $0.alignment == .top }
         
         ZStack {
             ForEach(Array(topToasts.enumerated()), id: \.element.id) { index, toast in
@@ -56,16 +54,27 @@ struct ToastViewModifier: ViewModifier {
                             removal: .move(edge: .top).combined(with: .opacity)
                         )
                     )
+                    .background(
+                        GeometryReader { geometry in
+                            Color.clear.preference(
+                                key: ToastFramePreferenceKey.self,
+                                value: [toast.id: geometry.frame(in: .global)]
+                            )
+                        }
+                    )
             }
         }
         .padding(.top, topToasts.isEmpty ? 0 : 8)
         .frame(maxHeight: topToasts.isEmpty ? 0 : nil)
         .animation(.spring(response: 0.35, dampingFraction: 0.75), value: topToasts.map { $0.id })
+        .onPreferenceChange(ToastFramePreferenceKey.self) { frames in
+            windowManager.toastFrames.merge(frames) { _, new in new }
+        }
     }
     
     @ViewBuilder
     private var centerToastsSection: some View {
-        let centerToasts = toastManager.toasts.filter { $0.alignment == .center }
+        let centerToasts = manager.toasts.filter { $0.alignment == .center }
         
         ZStack {
             ForEach(Array(centerToasts.enumerated()), id: \.element.id) { index, toast in
@@ -76,15 +85,26 @@ struct ToastViewModifier: ViewModifier {
                     .transition(
                         .scale(scale: 0.8).combined(with: .opacity)
                     )
+                    .background(
+                        GeometryReader { geometry in
+                            Color.clear.preference(
+                                key: ToastFramePreferenceKey.self,
+                                value: [toast.id: geometry.frame(in: .global)]
+                            )
+                        }
+                    )
             }
         }
         .frame(maxHeight: centerToasts.isEmpty ? 0 : nil)
         .animation(.spring(response: 0.35, dampingFraction: 0.75), value: centerToasts.map { $0.id })
+        .onPreferenceChange(ToastFramePreferenceKey.self) { frames in
+            windowManager.toastFrames.merge(frames) { _, new in new }
+        }
     }
     
     @ViewBuilder
     private var bottomToastsSection: some View {
-        let bottomToasts = toastManager.toasts.filter { $0.alignment == .bottom }
+        let bottomToasts = manager.toasts.filter { $0.alignment == .bottom }
         
         ZStack {
             ForEach(Array(bottomToasts.enumerated()), id: \.element.id) { index, toast in
@@ -99,17 +119,28 @@ struct ToastViewModifier: ViewModifier {
                             removal: .move(edge: .bottom).combined(with: .opacity)
                         )
                     )
+                    .background(
+                        GeometryReader { geometry in
+                            Color.clear.preference(
+                                key: ToastFramePreferenceKey.self,
+                                value: [toast.id: geometry.frame(in: .global)]
+                            )
+                        }
+                    )
             }
         }
         .padding(.bottom, bottomToasts.isEmpty ? 0 : 8)
         .frame(maxHeight: bottomToasts.isEmpty ? 0 : nil)
         .animation(.spring(response: 0.35, dampingFraction: 0.75), value: bottomToasts.map { $0.id })
+        .onPreferenceChange(ToastFramePreferenceKey.self) { frames in
+            windowManager.toastFrames.merge(frames) { _, new in new }
+        }
     }
     
     @ViewBuilder
     private func toastView(_ toast: ToastMessage) -> some View {
         ToastView(toast: toast) {
-            toastManager.dismiss(id: toast.id)
+            manager.dismiss(id: toast.id)
         }
     }
     
@@ -120,10 +151,8 @@ struct ToastViewModifier: ViewModifier {
         let position = total - 1 - index
         
         if position >= maxVisible {
-            return 0.85 // Hidden toasts
+            return 0.85
         }
-        
-        // Scale: 1.0 (top), 0.95, 0.90
         return 1.0 - (CGFloat(position) * 0.05)
     }
     
@@ -132,10 +161,8 @@ struct ToastViewModifier: ViewModifier {
         let position = total - 1 - index
         
         if position >= maxVisible {
-            return 0 // Hidden toasts stay at base position
+            return 0
         }
-        
-        // Offset: 0 (top), 8, 16
         let offset = CGFloat(position) * 8
         return alignment == .bottom ? -offset : offset
     }
@@ -145,14 +172,22 @@ struct ToastViewModifier: ViewModifier {
         let position = total - 1 - index
         
         if position >= maxVisible {
-            return 0 // Hide toasts beyond the 3rd
+            return 0
         }
-        
         return 1.0
     }
 }
 
-// MARK: - Preference Key for Toast Heights
+// MARK: - Preference Keys
+
+struct ToastFramePreferenceKey: PreferenceKey {
+    static let defaultValue: [UUID: CGRect] = [:]
+    
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue()) { _, new in new }
+    }
+}
+
 struct ToastHeightPreferenceKey: PreferenceKey {
     static let defaultValue: [UUID: CGFloat] = [:]
     

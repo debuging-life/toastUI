@@ -10,6 +10,8 @@ import SwiftUI
 public class ToastManager: ObservableObject, @unchecked Sendable {
     @Published public var toasts: [ToastMessage] = []
     private var workItems: [UUID: DispatchWorkItem] = [:]
+   
+    public static let shared = ToastManager()
     
     public init() {}
     

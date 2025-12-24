@@ -245,6 +245,46 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             enableCopy: false
         )
     }
+
+    @MainActor
+    public func glass(
+        title: String,
+        message: String? = nil,
+        duration: TimeInterval = 3.0,
+        alignment: ToastAlignment = .top,
+        configuration: ToastConfiguration = .default,
+        showCloseButton: Bool = true,
+        enableCopy: Bool = false
+    ) {
+        // Check if glass effect is available
+        guard DeviceCapabilities.supportsGlassEffect else {
+            // Fallback to glass type which will use fallback view
+            present(
+                title: title,
+                message: message,
+                type: .glass,
+                duration: duration,
+                alignment: alignment,
+                backgroundColor: nil,
+                configuration: configuration,
+                showCloseButton: showCloseButton,
+                enableCopy: enableCopy
+            )
+            return
+        }
+
+        present(
+            title: title,
+            message: message,
+            type: .glass,
+            duration: duration,
+            alignment: alignment,
+            backgroundColor: nil,
+            configuration: configuration,
+            showCloseButton: showCloseButton,
+            enableCopy: enableCopy
+        )
+    }
     
     // MARK: - Dismiss Methods
     

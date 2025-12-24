@@ -17,7 +17,8 @@ https://github.com/user-attachments/assets/6ed6bc9d-5206-4749-bca3-9561bcd00f4b
 
 ### Toast Notifications
 - 🎯 **Simple API** - Just `@Environment(\.toast) var toast`
-- 🎨 **5 Toast Types** - Success, Error, Warning, Info, Progress
+- 🎨 **6 Toast Types** - Success, Error, Warning, Info, Progress, Glass Effect
+- ✨ **Glass Effect** - Beautiful translucent glass toast (iOS 26+, auto-fallback)
 - 📍 **3 Alignments** - Top, Center, Bottom
 - 🎭 **Custom Icons** - Use any SwiftUI View as icon
 - 🌈 **Custom Colors** - Override default colors with your brand colors
@@ -174,11 +175,19 @@ struct ToastTypesExample: View {
             // Progress Toast (Purple - No auto-dismiss)
             Button("Progress") {
                 toast.progress(title: "Loading...")
-                
+
                 // Must dismiss manually
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     toast.dismiss()
                 }
+            }
+
+            // Glass Effect Toast (Translucent - iOS 26+)
+            Button("Glass Effect") {
+                toast.glass(
+                    title: "Glass Effect",
+                    message: "Beautiful translucent design"
+                )
             }
         }
         .padding()
@@ -238,6 +247,67 @@ struct CopyFeatureExample: View {
 - Copies both title and message to clipboard
 - Visual feedback with smooth animation
 - Works on both iOS and macOS
+
+### Glass Effect Toast ✨
+
+The glass effect toast provides a beautiful translucent appearance with automatic OS detection. On iOS 26+, it uses ultra-thin material for maximum translucency. On older iOS versions, it gracefully falls back to regular material.
+
+```swift
+struct GlassEffectExample: View {
+    @Environment(\.toast) var toast
+
+    var body: some View {
+        VStack(spacing: 20) {
+            // Basic glass toast
+            Button("Glass Toast") {
+                toast.glass(
+                    title: "Glass Effect",
+                    message: "Beautiful translucent design"
+                )
+            }
+
+            // Glass with different alignments
+            Button("Glass - Center") {
+                toast.glass(
+                    title: "Center Glass",
+                    message: "Perfect for important messages",
+                    alignment: .center
+                )
+            }
+
+            // Glass with copy feature
+            Button("Glass with Copy") {
+                toast.glass(
+                    title: "Session ID",
+                    message: "abc-123-def-456",
+                    enableCopy: true
+                )
+            }
+
+            // Custom styled glass
+            Button("Rounded Glass") {
+                toast.glass(
+                    title: "Rounded",
+                    message: "With rounded corners",
+                    configuration: .rounded
+                )
+            }
+        }
+        .padding()
+    }
+}
+```
+
+**Key Features:**
+- **Automatic Detection**: Checks for iOS 26+ at runtime
+- **Graceful Fallback**: Uses regular material on iOS < 26
+- **Adaptive Colors**: Text adapts to light/dark mode
+- **All Standard Features**: Supports custom icons, copy, close button, alignments
+- **Seamless Experience**: Same API works across all iOS versions
+
+**Visual Appearance:**
+- **iOS 26+**: Ultra-thin material with maximum translucency and subtle white border
+- **iOS < 26**: Regular material with good translucency and lighter border
 
 ### Multiple Toasts & Stacking
 
@@ -862,6 +932,8 @@ func warning(title: String, message: String? = nil, duration: TimeInterval = 3.0
 
 func info(title: String, message: String? = nil, duration: TimeInterval = 3.0, alignment: ToastAlignment = .top, backgroundColor: Color? = nil, configuration: ToastConfiguration = .default, showCloseButton: Bool = true, enableCopy: Bool = false)
 
+func glass(title: String, message: String? = nil, duration: TimeInterval = 3.0, alignment: ToastAlignment = .top, configuration: ToastConfiguration = .default, showCloseButton: Bool = true, enableCopy: Bool = false)
+
 // Dismiss methods
 func dismiss() // Dismisses topmost toast
 func dismissAll() // Dismisses all toasts
@@ -953,6 +1025,7 @@ public struct ToastConfiguration {
 - Use progress toasts for operations over 1 second
 - Choose appropriate alignment based on context
 - Use custom colors for brand consistency
+- Use glass effect for premium features or subtle notifications
 
 **Dialogs:**
 - Use dialogs for actions requiring confirmation
@@ -1022,7 +1095,15 @@ WindowGroup("Settings") {
 }
 ```
 
-## What's New in v3.2.0
+## What's New in v3.3.0
+
+### ✨ Glass Effect Toast (NEW!)
+- Beautiful translucent glass design for iOS 26+
+- Automatic OS detection with graceful fallback
+- Ultra-thin material on iOS 26+, regular material on older versions
+- Works seamlessly across all iOS versions
+- Same simple API: `toast.glass(title:message:)`
+- Supports all standard features (copy, custom icons, alignments)
 
 ### 📋 Copy to Clipboard Feature
 - One-tap copy for error messages and logs
@@ -1092,5 +1173,3 @@ Special thanks to the SwiftUI community for inspiration and feedback.
 **If you find this package useful, please ⭐ star the repo!**
 
 **Questions or issues?** Open an issue on GitHub
-
-**Need help?** Check out the [Examples](Examples/) folder for complete working samples

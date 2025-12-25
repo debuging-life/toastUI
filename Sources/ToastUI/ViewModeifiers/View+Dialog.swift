@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+#if os(iOS)
 public extension View {
     /// Present a custom dialog view
     func dialog<Content: View>(
@@ -55,7 +56,11 @@ fileprivate struct DialogModifier<ViewContent: View>: ViewModifier {
                         // Content - slides from bottom
                         viewContent
                             .frame(maxWidth: config.maxWidth)
+                            #if os(iOS)
                             .background(Color(.systemBackground))
+                            #else
+                            .background(Color(nsColor: .windowBackgroundColor))
+                            #endif
                             .cornerRadius(config.cornerRadius)
                             .shadow(
                                 color: .black.opacity(0.2),
@@ -67,7 +72,9 @@ fileprivate struct DialogModifier<ViewContent: View>: ViewModifier {
                             .offset(y: showContent ? 0 : geometry.size.height)
                             .opacity(showContent ? 1 : 0)
                     }
+                    #if os(iOS)
                     .background(ClearBackgroundView())
+                    #endif
                     .onAppear {
                         // Fade backdrop quickly
                         withAnimation(.easeOut(duration: 0.2)) {
@@ -124,6 +131,9 @@ fileprivate struct DialogModifier<ViewContent: View>: ViewModifier {
 
 // MARK: - Clear Background Helper (iOS 16 Compatible)
 
+#if os(iOS)
+import UIKit
+
 fileprivate struct ClearBackgroundView: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
@@ -132,6 +142,8 @@ fileprivate struct ClearBackgroundView: UIViewRepresentable {
         }
         return view
     }
-    
+
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
+#endif
+#endif

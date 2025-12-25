@@ -31,9 +31,11 @@ private struct ToastSetupModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .task {
+                #if canImport(UIKit)
                 // Small delay to ensure window scene is ready
                 try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
                 await ToastWindowManager.shared.setup(with: ToastManager.shared)
+                #endif
             }
     }
 }

@@ -10,11 +10,11 @@ import SwiftUI
 
 struct ToastViewModifier: ViewModifier {
     @ObservedObject var manager: ToastManager
-    
+
     init(manager: ToastManager) {
         self.manager = manager
     }
-    
+
     func body(content: Content) -> some View {
         content
     }
@@ -22,6 +22,7 @@ struct ToastViewModifier: ViewModifier {
 
 // MARK: - Toast Window Root View
 
+#if canImport(UIKit)
 struct ToastWindowRootView: View {
     @ObservedObject var manager: ToastManager
     @ObservedObject var windowManager: ToastWindowManager
@@ -177,6 +178,7 @@ struct ToastWindowRootView: View {
         return 1.0
     }
 }
+#endif
 
 // MARK: - Preference Keys
 

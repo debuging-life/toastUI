@@ -24,7 +24,8 @@ A powerful, all-in-one notification and overlay system for SwiftUI with toasts, 
 - **Custom Views** - Create any overlay with SwiftUI
 - **Rive Animations** - Interactive animated overlays
 - **Custom Loaders** - Provide your own loading indicators
-- **Glass/Solid Styles** - Choose your visual style
+- **Glass/Solid Styles** - Choose your visual style with full customization
+- **Text Styling** - Complete control over fonts, colors, and weights
 - **Auto-dismiss** - Configurable auto-dismiss timers
 - **Close Button** - Optional dismissal
 - **Retry Support** - Built-in retry callbacks
@@ -124,11 +125,12 @@ struct ContentView: View {
 
 1. [Toast Notifications](#toast-notifications)
 2. [UI Overlay System](#ui-overlay-system)
-3. [Custom Loaders](#custom-loaders)
-4. [Custom Overlays](#custom-overlays)
-5. [Rive Animations](#rive-animations)
-6. [Dialog System](#dialog-system)
-7. [Advanced Features](#advanced-features)
+3. [Overlay Configuration](#overlay-configuration)
+4. [Custom Loaders](#custom-loaders)
+5. [Custom Overlays](#custom-overlays)
+6. [Rive Animations](#rive-animations)
+7. [Dialog System](#dialog-system)
+8. [Advanced Features](#advanced-features)
 
 ---
 
@@ -173,21 +175,6 @@ toast.success(
 toast.success("Top toast", alignment: .top)
 toast.info("Center toast", alignment: .center)
 toast.error("Bottom toast", alignment: .bottom)
-```
-
-### Toast Configuration
-
-```swift
-toast.show(
-    ToastMessage(
-        type: .success,
-        title: "Success",
-        message: "Optional message",
-        alignment: .top,
-        duration: 3.0,
-        showCloseButton: true
-    )
-)
 ```
 
 ### Custom Icon
@@ -271,34 +258,6 @@ uiState = .success(message: "Done!")
 uiState = .idle
 ```
 
-### Configuration Options
-
-```swift
-.uiOverlay(
-    state: $uiState,
-    configuration: UIOverlayConfiguration(
-        style: .glass,              // or .solid(color: .blue, opacity: 0.9)
-        showCloseButton: true,      // Show X button
-        backdropOpacity: 0.4,       // Backdrop darkness (0-1)
-        cornerRadius: 20,           // Rounded corners
-        maxWidth: 400,              // Max overlay width
-        autoDismissAfter: 3.0       // Auto-dismiss in seconds
-    )
-)
-```
-
-### Glass vs Solid Styles
-
-```swift
-// Glass effect (iOS 26+ with fallback)
-configuration: UIOverlayConfiguration(style: .glass)
-
-// Solid color background
-configuration: UIOverlayConfiguration(
-    style: .solid(color: .indigo, opacity: 0.95)
-)
-```
-
 ### Retry Callback
 
 ```swift
@@ -327,6 +286,182 @@ uiState = .success(message: "Uploaded!") {
         .font(.system(size: 50))
         .foregroundStyle(.blue)
 }
+```
+
+---
+
+## Overlay Configuration
+
+The configuration system provides clean, sophisticated control over overlay appearance and behavior.
+
+### Configuration Structure
+
+```swift
+UIOverlayConfiguration(
+    style: OverlayStyle,                    // Glass or solid background
+    titleStyle: TextStyleConfiguration,     // Title text styling
+    messageStyle: TextStyleConfiguration,   // Message text styling
+    showCloseButton: Bool,                  // Show close button
+    autoDismissAfter: TimeInterval?         // Auto-dismiss duration
+)
+```
+
+### Overlay Styles
+
+#### Glass Effect
+```swift
+.glass(
+    backdropOpacity: Double = 0.3,
+    cornerRadius: CGFloat = 20,
+    maxWidth: CGFloat = 340
+)
+```
+
+#### Solid Color
+```swift
+.solid(
+    backgroundColor: Color,
+    opacity: Double = 1.0,
+    backdropOpacity: Double = 0.3,
+    cornerRadius: CGFloat = 20,
+    maxWidth: CGFloat = 340
+)
+```
+
+### Text Style Configuration
+
+```swift
+TextStyleConfiguration(
+    color: Color = .primary,
+    font: Font = .headline,
+    fontWeight: Font.Weight = .semibold
+)
+```
+
+**Built-in Presets:**
+- `.title` - Default title style (primary, headline, semibold)
+- `.message` - Default message style (secondary, subheadline, regular)
+- `.largeBoldTitle` - Large impactful title
+- `.smallLightMessage` - Subtle small message
+
+### Configuration Examples
+
+#### Example 1: Simple Glass Effect
+```swift
+.uiOverlay(
+    state: $uiState,
+    configuration: .init(
+        style: .glass()
+    )
+)
+```
+
+#### Example 2: Custom Glass with Modified Properties
+```swift
+.uiOverlay(
+    state: $uiState,
+    configuration: .init(
+        style: .glass(
+            backdropOpacity: 0.5,
+            cornerRadius: 24,
+            maxWidth: 400
+        ),
+        showCloseButton: true
+    )
+)
+```
+
+#### Example 3: Solid Color with Custom Text Styles
+```swift
+.uiOverlay(
+    state: $uiState,
+    configuration: .init(
+        style: .solid(
+            backgroundColor: .white,
+            opacity: 1.0,
+            backdropOpacity: 0.5,
+            cornerRadius: 24,
+            maxWidth: 380
+        ),
+        titleStyle: TextStyleConfiguration(
+            color: .blue,
+            font: .title2,
+            fontWeight: .bold
+        ),
+        messageStyle: TextStyleConfiguration(
+            color: .gray,
+            font: .body,
+            fontWeight: .regular
+        ),
+        showCloseButton: true,
+        autoDismissAfter: 3.0
+    )
+)
+```
+
+#### Example 4: Dark Theme
+```swift
+.uiOverlay(
+    state: $uiState,
+    configuration: .init(
+        style: .solid(
+            backgroundColor: .black,
+            opacity: 0.95,
+            backdropOpacity: 0.4
+        ),
+        titleStyle: TextStyleConfiguration(
+            color: .white,
+            font: .headline,
+            fontWeight: .semibold
+        ),
+        messageStyle: TextStyleConfiguration(
+            color: .white.opacity(0.7),
+            font: .subheadline,
+            fontWeight: .regular
+        ),
+        showCloseButton: true
+    )
+)
+```
+
+#### Example 5: Using Presets
+```swift
+.uiOverlay(
+    state: $uiState,
+    configuration: .init(
+        style: .glass(),
+        titleStyle: .largeBoldTitle,
+        messageStyle: .smallLightMessage
+    )
+)
+```
+
+### Creating Custom Text Style Presets
+
+```swift
+extension TextStyleConfiguration {
+    static let errorStyle = TextStyleConfiguration(
+        color: .red,
+        font: .title3,
+        fontWeight: .bold
+    )
+
+    static let successStyle = TextStyleConfiguration(
+        color: .green,
+        font: .headline,
+        fontWeight: .semibold
+    )
+}
+
+// Usage
+.uiOverlay(
+    state: $uiState,
+    configuration: .init(
+        style: .glass(),
+        titleStyle: .errorStyle,
+        messageStyle: .message
+    )
+)
 ```
 
 ---
@@ -459,35 +594,6 @@ uiState = .custom(id: "rating") {
 }
 ```
 
-### Custom Form Overlay
-
-```swift
-@State private var name = ""
-@State private var email = ""
-
-uiState = .custom(id: "form") {
-    VStack(spacing: 20) {
-        Text("Contact Form")
-            .font(.title2)
-
-        TextField("Name", text: $name)
-            .textFieldStyle(.roundedBorder)
-
-        TextField("Email", text: $email)
-            .textFieldStyle(.roundedBorder)
-            .keyboardType(.emailAddress)
-
-        Button("Submit") {
-            submitForm()
-            uiState = .idle
-        }
-        .disabled(name.isEmpty || email.isEmpty)
-        .buttonStyle(.borderedProminent)
-    }
-    .padding()
-}
-```
-
 ---
 
 ## Rive Animations
@@ -520,41 +626,6 @@ uiState = .riveAnimation(
     title: "Success!",
     message: "Task completed"
 )
-```
-
-### Interactive Rive
-
-```swift
-uiState = .riveAnimation(
-    riveName: "interactive_demo",
-    stateMachineName: "State Machine 1",
-    title: "Interactive Demo",
-    message: "Tap to interact"
-)
-```
-
-### Multi-Step Flow with Rive
-
-```swift
-func startFlow() {
-    // Step 1: Loading
-    uiState = .loading(message: "Initializing...")
-
-    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-        // Step 2: Rive animation
-        uiState = .riveAnimation(
-            riveName: "processing",
-            stateMachineName: "State Machine 1",
-            title: "Processing",
-            message: "Analyzing data..."
-        )
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            // Step 3: Success
-            uiState = .success(message: "Complete!")
-        }
-    }
-}
 ```
 
 ---
@@ -597,39 +668,6 @@ Button("Show Dialog") {
     isPresented: $showDialog
 ) {
     DialogContent()
-}
-```
-
-### Alert Dialog
-
-```swift
-.dialog(isPresented: $showAlert) {
-    VStack(spacing: 16) {
-        Image(systemName: "exclamationmark.triangle.fill")
-            .font(.system(size: 50))
-            .foregroundStyle(.orange)
-
-        Text("Warning")
-            .font(.title2)
-            .fontWeight(.bold)
-
-        Text("Are you sure you want to continue?")
-            .multilineTextAlignment(.center)
-
-        HStack(spacing: 12) {
-            Button("Cancel") {
-                showAlert = false
-            }
-            .buttonStyle(.bordered)
-
-            Button("Continue") {
-                proceed()
-                showAlert = false
-            }
-            .buttonStyle(.borderedProminent)
-        }
-    }
-    .padding()
 }
 ```
 
@@ -727,53 +765,6 @@ func fetchUsers() async {
 }
 ```
 
-### Auto-dismiss with Chain
-
-```swift
-func saveAndNotify() async {
-    // Show loading
-    uiState = .loading(message: "Saving...")
-
-    try await save()
-
-    // Show success with auto-dismiss
-    uiState = .success(message: "Saved!")
-
-    // Will auto-dismiss after 2 seconds
-    // (if autoDismissAfter is configured)
-}
-```
-
-### Custom Configuration Presets
-
-```swift
-extension UIOverlayConfiguration {
-    static let glassWithClose = UIOverlayConfiguration(
-        style: .glass,
-        showCloseButton: true,
-        autoDismissAfter: nil
-    )
-
-    static let solidBlue = UIOverlayConfiguration(
-        style: .solid(color: .blue, opacity: 0.95),
-        showCloseButton: true,
-        cornerRadius: 24
-    )
-
-    static let quickDismiss = UIOverlayConfiguration(
-        style: .glass,
-        showCloseButton: false,
-        autoDismissAfter: 2.0
-    )
-}
-
-// Usage
-.uiOverlay(
-    state: $uiState,
-    configuration: .glassWithClose
-)
-```
-
 ---
 
 ## Platform Support
@@ -826,21 +817,58 @@ public enum UIState {
 }
 ```
 
+### OverlayStyle Enum
+
+```swift
+public enum OverlayStyle {
+    case glass(
+        backdropOpacity: Double = 0.3,
+        cornerRadius: CGFloat = 20,
+        maxWidth: CGFloat = 340
+    )
+
+    case solid(
+        backgroundColor: Color,
+        opacity: Double = 1.0,
+        backdropOpacity: Double = 0.3,
+        cornerRadius: CGFloat = 20,
+        maxWidth: CGFloat = 340
+    )
+}
+```
+
+### TextStyleConfiguration
+
+```swift
+public struct TextStyleConfiguration {
+    public let color: Color
+    public let font: Font
+    public let fontWeight: Font.Weight
+
+    // Presets
+    public static let title: TextStyleConfiguration
+    public static let message: TextStyleConfiguration
+    public static let largeBoldTitle: TextStyleConfiguration
+    public static let smallLightMessage: TextStyleConfiguration
+}
+```
+
 ### UIOverlayConfiguration
 
 ```swift
 public struct UIOverlayConfiguration {
-    var style: OverlayStyle
-    var showCloseButton: Bool
-    var backdropOpacity: Double
-    var cornerRadius: CGFloat
-    var maxWidth: CGFloat
-    var autoDismissAfter: TimeInterval?
-}
+    public let style: OverlayStyle
+    public let titleStyle: TextStyleConfiguration
+    public let messageStyle: TextStyleConfiguration
+    public let showCloseButton: Bool
+    public let autoDismissAfter: TimeInterval?
 
-public enum OverlayStyle {
-    case glass
-    case solid(color: Color, opacity: Double)
+    // Computed properties from style
+    public var backdropOpacity: Double
+    public var cornerRadius: CGFloat
+    public var maxWidth: CGFloat
+    public var backgroundColor: Color?
+    public var overlayOpacity: Double?
 }
 ```
 
@@ -853,6 +881,7 @@ Check out the included example files:
 - `CustomLoaderExamples.swift` - Custom loading indicators
 - `CustomUIStateExamples.swift` - Custom overlays and Rive animations
 - `UIOverlayAdvancedExamples.swift` - Advanced overlay features
+- `UIOverlayConfigurationExamples.swift` - Configuration examples
 
 ---
 

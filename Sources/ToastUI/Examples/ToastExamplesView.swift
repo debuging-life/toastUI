@@ -15,6 +15,7 @@ struct ToastExamplesView: View {
         NavigationView {
             List {
                 basicToastsSection
+                glassEffectSection
                 titleOnlySection
                 stackingSection
                 alignmentSection
@@ -71,8 +72,90 @@ struct ToastExamplesView: View {
         }
     }
     
+    // MARK: - Glass Effect (iOS 26+)
+
+    private var glassEffectSection: some View {
+        Section {
+            Button("Basic Glass Toast") {
+                toast.glass(
+                    title: "Glass Effect",
+                    message: "Beautiful translucent design"
+                )
+            }
+
+            Button("Glass - Top") {
+                toast.glass(
+                    title: "Top Glass",
+                    message: "Ultra-thin material on iOS 26+",
+                    alignment: .top
+                )
+            }
+
+            Button("Glass - Center") {
+                toast.glass(
+                    title: "Center Glass",
+                    message: "Perfect for important messages",
+                    duration: 4.0,
+                    alignment: .center
+                )
+            }
+
+            Button("Glass - Bottom") {
+                toast.glass(
+                    title: "Bottom Glass",
+                    message: "Subtle and elegant",
+                    alignment: .bottom
+                )
+            }
+
+            Button("Glass with Copy") {
+                toast.glass(
+                    title: "Session ID",
+                    message: "abc-123-def-456-ghi-789",
+                    enableCopy: true
+                )
+            }
+
+            Button("Glass - Custom Icon") {
+                toast.present(
+                    title: "Premium Feature",
+                    message: "Available on iOS 26+",
+                    type: .glass,
+                    duration: 4.0
+                ) {
+                    Image(systemName: "sparkles")
+                        .font(.title2)
+                        .foregroundStyle(.primary)
+                }
+            }
+
+            Button("Glass - Rounded Style") {
+                toast.glass(
+                    title: "Rounded Glass",
+                    message: "Extra rounded corners",
+                    configuration: .rounded
+                )
+            }
+
+            Button("Multiple Glass Toasts") {
+                toast.glass(title: "Glass 1", duration: 8.0)
+                toast.glass(title: "Glass 2", message: "Stacking beautifully", duration: 8.0)
+                toast.glass(title: "Glass 3", message: "With translucent effect", duration: 8.0)
+            }
+        } header: {
+            Text("Glass Effect Toast (iOS 26+)")
+        } footer: {
+            let version = DeviceCapabilities.iOSMajorVersion
+            if DeviceCapabilities.supportsGlassEffect {
+                Text("✨ Running iOS \(version) - Full glass effect with ultra-thin material is active!")
+            } else {
+                Text("ℹ️ Running iOS \(version) - Using fallback with regular material (glass effect available on iOS 26+)")
+            }
+        }
+    }
+
     // MARK: - Title Only
-    
+
     private var titleOnlySection: some View {
         Section {
             Button("Quick Success") {

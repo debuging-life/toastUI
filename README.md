@@ -1,78 +1,80 @@
 # ToastUI 🎉
 
-A powerful, all-in-one notification and dialog system for SwiftUI with toasts, dialogs, and clipboard support - built with environment-based API for seamless integration.
+A powerful, all-in-one notification and overlay system for SwiftUI with toasts, dialogs, UI overlays, custom loaders, and Rive animation support - built with modern Swift concurrency and environment-based API.
 
-![Platform](https://img.shields.io/badge/platform-iOS%2016%2B%20%7C%20macOS%2013%2B-blue)
+![Platform](https://img.shields.io/badge/platform-iOS%2016%2B%20%7C%20macOS%2013.1%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-6.2+-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-https://github.com/user-attachments/assets/bef65af7-a544-4396-83aa-c99411154cc4
-
-https://github.com/user-attachments/assets/dbba4945-59e7-473b-ba64-7b959b42ce5a
-
-https://github.com/user-attachments/assets/6ed6bc9d-5206-4749-bca3-9561bcd00f4b
-
-
 ## Features ✨
 
-### Toast Notifications
-- 🎯 **Simple API** - Just `@Environment(\.toast) var toast`
-- 🎨 **5 Toast Types** - Success, Error, Warning, Info, Progress
-- 📍 **3 Alignments** - Top, Center, Bottom
-- 🎭 **Custom Icons** - Use any SwiftUI View as icon
-- 🌈 **Custom Colors** - Override default colors with your brand colors
-- 🎨 **Custom Styling** - Configure corner radius, shadows, padding
-- 💬 **Optional Message** - Title-only or title + message
-- 📋 **Copy to Clipboard** - One-tap copy for error messages and logs
-- 📚 **Multiple Toasts** - Stack toasts with visual depth effect
-- 🔄 **FILO Behavior** - First In, Last Out (newest dismisses first)
-- ❌ **Optional Close Button** - Show/hide close button per toast
-- ⏱️ **Smart Auto-dismiss** - Proper timer management with stacking
-- 🎯 **Progress Toast** - Single, non-stacking progress indicator
+### 🍞 Toast Notifications
+- **Simple API** - Just `@Environment(\.toast) var toast`
+- **6 Toast Types** - Success, Error, Warning, Info, Progress, Glass Effect
+- **Glass Effect** - Beautiful translucent glass toast (iOS 26+, auto-fallback to regular material)
+- **3 Alignments** - Top, Center, Bottom
+- **Custom Icons** - Use any SwiftUI View as icon
+- **Custom Colors** - Brand your toasts
+- **Copy to Clipboard** - One-tap copy for errors
+- **Multiple Toasts** - Stack with depth effect
+- **Smart Auto-dismiss** - Proper timer management
 
-### Dialog System
-- 💬 **Custom Dialogs** - Build any dialog with SwiftUI views
-- 🎨 **Pre-built Components** - Alert, Confirmation dialogs ready to use
-- ⚙️ **Configurable** - Customize size, appearance, and behavior
-- 🎭 **Backdrop Control** - Dismiss on tap or require explicit action
-- 🎬 **Smooth Animations** - Bouncy slide-up transitions
-- 🔗 **Toast Integration** - Use toasts and dialogs together seamlessly
+### 🎭 UI Overlay System
+- **5 Built-in States** - Loading, Empty, Failure, Success, Idle
+- **Custom Views** - Create any overlay with SwiftUI
+- **Rive Animations** - Interactive animated overlays
+- **Custom Loaders** - Provide your own loading indicators
+- **Glass/Solid Styles** - Choose your visual style with full customization
+- **Text Styling** - Complete control over fonts, colors, and weights
+- **Auto-dismiss** - Configurable auto-dismiss timers
+- **Close Button** - Optional dismissal
+- **Retry Support** - Built-in retry callbacks
 
-### General
-- 📱 **SwiftUI Native** - Pure SwiftUI, no UIKit dependencies
-- 🚀 **Easy Integration** - One-time setup, use anywhere
-- 🧩 **ViewModel Support** - Works seamlessly with ViewModels
-- 🎬 **Smooth Animations** - Spring-based transitions
-- 🎯 **Swift 6 Ready** - Built with modern Swift concurrency
+### 💬 Dialog System
+- **Custom Dialogs** - Build with SwiftUI views
+- **Pre-built Components** - Alert, Confirmation
+- **Smooth Animations** - Bouncy slide-up
+- **Backdrop Control** - Tap to dismiss or require action
+
+### 🚀 General
+- **SwiftUI Native** - Pure SwiftUI
+- **iOS 16+ & macOS 13.1+** - Cross-platform
+- **Swift 6 Ready** - Modern concurrency
+- **Environment-based** - Seamless integration
+
+---
 
 ## Requirements
 
-- iOS 16.0+
+- iOS 16.0+ / macOS 13.1+
 - Swift 6.2+
 - Xcode 16.2+
-- macOS 13.0+
+
+---
 
 ## Installation
 
 ### Swift Package Manager
 
-1. In Xcode, select **File** → **Add Package Dependencies**
-2. Enter the package URL: `https://github.com/debuging-life/ToastUI.git`
+1. In Xcode: **File** → **Add Package Dependencies**
+2. Enter: `https://github.com/debuging-life/ToastUI.git`
 3. Select **Up to Next Major Version** with `3.2.0`
-4. Click **Add Package**
 
-Or add it to your `Package.swift`:
+Or in `Package.swift`:
 ```swift
 dependencies: [
     .package(url: "https://github.com/debuging-life/ToastUI.git", from: "3.2.0")
 ]
 ```
 
+---
+
 ## Quick Start
 
-### 1. Setup (One-time)
+### Setup (One-time)
 
-Add `.setupToastUI()` to your root view in your App file:
+Add `.setupToastUI()` to your root view:
+
 ```swift
 import SwiftUI
 import ToastUI
@@ -82,1015 +84,833 @@ struct YourApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .setupToastUI() // ✅ One-time setup
+                .setupToastUI() // ✅ Add this
         }
     }
 }
 ```
 
-### 2. Use Toasts in Views
+### Basic Toast Usage
+
 ```swift
 import SwiftUI
 import ToastUI
 
 struct ContentView: View {
     @Environment(\.toast) var toast
-    
-    var body: some View {
-        Button("Show Success") {
-            toast.success(title: "Success!", message: "Operation completed")
-        }
-    }
-}
-```
 
-### 3. Use Dialogs in Views
-```swift
-struct ContentView: View {
-    @State private var showDialog = false
-    
-    var body: some View {
-        Button("Show Dialog") {
-            showDialog = true
-        }
-        .dialog(isPresented: $showDialog) {
-            VStack(spacing: 20) {
-                Text("Hello Dialog!")
-                    .font(.title)
-                
-                Button("Close") {
-                    showDialog = false
-                }
-            }
-            .padding()
-        }
-    }
-}
-```
-
-That's it! No additional setup needed. 🎊
-
-## Toast Features
-
-### Toast Types
-```swift
-struct ToastTypesExample: View {
-    @Environment(\.toast) var toast
-    
     var body: some View {
         VStack(spacing: 20) {
-            // Success Toast (Green)
-            Button("Success") {
-                toast.success(
-                    title: "Success!",
-                    message: "Your changes have been saved"
-                )
+            Button("Show Success") {
+                toast.success("Operation completed!")
             }
-            
-            // Error Toast (Red)
-            Button("Error") {
-                toast.error(
-                    title: "Error",
-                    message: "Failed to connect to server"
-                )
-            }
-            
-            // Warning Toast (Orange)
-            Button("Warning") {
-                toast.warning(
-                    title: "Warning",
-                    message: "Your session will expire soon"
-                )
-            }
-            
-            // Info Toast (Blue)
-            Button("Info") {
-                toast.info(
-                    title: "Did you know?",
-                    message: "You can customize everything!"
-                )
-            }
-            
-            // Progress Toast (Purple - No auto-dismiss)
-            Button("Progress") {
-                toast.progress(title: "Loading...")
-                
-                // Must dismiss manually
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    toast.dismiss()
-                }
-            }
-        }
-        .padding()
-    }
-}
-```
 
-### Copy to Clipboard Feature 📋
+            Button("Show Error") {
+                toast.error("Something went wrong")
+            }
 
-Enable copy button for error messages, API responses, or any content users might need to share or report:
-```swift
-struct CopyFeatureExample: View {
-    @Environment(\.toast) var toast
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // Error with copy button
-            Button("API Error (Copyable)") {
-                toast.error(
-                    title: "API Error",
-                    message: "Error Code: 500\nEndpoint: /api/users\nMessage: Internal Server Error",
-                    duration: 10.0,
-                    enableCopy: true // ← Enable copy button
-                )
-            }
-            
-            // Stack trace with copy
-            Button("Stack Trace (Copyable)") {
-                toast.error(
-                    title: "Exception",
-                    message: """
-                    at MyApp.ViewController.loadData()
-                    at MyApp.NetworkManager.request()
-                    at Foundation.URLSession.dataTask()
-                    """,
-                    duration: 15.0,
-                    enableCopy: true
-                )
-            }
-            
-            // Debug info with copy
-            Button("Debug Info") {
-                toast.info(
-                    title: "Session ID",
-                    message: "abc123-def456-ghi789",
-                    enableCopy: true
-                )
+            Button("Show Warning") {
+                toast.warning("Please check your input")
             }
         }
     }
 }
 ```
-
-**How it works:**
-- Shows a copy icon next to the close button
-- Icon changes to checkmark on successful copy
-- Copies both title and message to clipboard
-- Visual feedback with smooth animation
-- Works on both iOS and macOS
-
-### Multiple Toasts & Stacking
-
-Toasts stack on top of each other with a beautiful card-stacking effect. Users can see up to 3 toasts at once, with a visual depth effect.
-```swift
-struct StackingExample: View {
-    @Environment(\.toast) var toast
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Button("Add Single Toast") {
-                toast.success(title: "Toast #1", duration: 5.0)
-            }
-            
-            Button("Stack 5 Toasts") {
-                for i in 1...5 {
-                    toast.success(
-                        title: "Toast #\(i)",
-                        message: "Stacking beautifully",
-                        duration: 8.0
-                    )
-                }
-            }
-            
-            Text("Toasts stack with scale & offset effect")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-```
-
-**Visual Effect:**
-```
-┌─────────────────────────┐  ← Newest (100% size)
-│ Toast 3                 │
-└─────────────────────────┘
-  ┌───────────────────────┐  ← 2nd (95% size, +8pt offset)
-  │ Toast 2               │
-  └───────────────────────┘
-    ┌─────────────────────┐  ← 3rd (90% size, +16pt offset)
-    │ Toast 1             │
-    └─────────────────────┘
-```
-
-### FILO Behavior (First In, Last Out)
-
-Toasts dismiss in reverse order - the newest toast dismisses first, then the next newest, etc.
-```swift
-Button("Test FILO") {
-    toast.success(title: "First (5s)", duration: 5.0)
-    toast.info(title: "Second (3s)", duration: 3.0)
-    toast.warning(title: "Third (4s)", duration: 4.0)
-}
-// Dismisses: Third (4s) → Second (3s) → First (5s)
-```
-
-### Toast Alignment
-```swift
-struct AlignmentExample: View {
-    @Environment(\.toast) var toast
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Button("Top (Default)") {
-                toast.success(
-                    title: "Top Toast",
-                    alignment: .top
-                )
-            }
-            
-            Button("Center") {
-                toast.warning(
-                    title: "Center Toast",
-                    alignment: .center
-                )
-            }
-            
-            Button("Bottom") {
-                toast.info(
-                    title: "Bottom Toast",
-                    alignment: .bottom
-                )
-            }
-        }
-    }
-}
-```
-
-### Custom Styling
-
-Use `ToastConfiguration` to customize appearance:
-```swift
-struct CustomStylingExample: View {
-    @Environment(\.toast) var toast
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // Pre-defined styles
-            Button("Compact Style") {
-                toast.success(
-                    title: "Compact",
-                    configuration: .compact
-                )
-            }
-            
-            Button("Rounded Style") {
-                toast.success(
-                    title: "Very Rounded",
-                    configuration: .rounded
-                )
-            }
-            
-            // Custom configuration
-            Button("Fully Custom") {
-                let customConfig = ToastConfiguration(
-                    cornerRadius: 25,
-                    shadowRadius: 20,
-                    shadowColor: .purple.opacity(0.3),
-                    shadowX: 0,
-                    shadowY: 10,
-                    horizontalPadding: 20,
-                    verticalPadding: 20
-                )
-                
-                toast.success(
-                    title: "Custom Style",
-                    message: "Unique appearance",
-                    configuration: customConfig
-                )
-            }
-        }
-    }
-}
-```
-
-### Custom Icons
-```swift
-struct CustomIconsExample: View {
-    @Environment(\.toast) var toast
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // Custom SF Symbol
-            Button("Custom Icon") {
-                toast.present(
-                    title: "New Message",
-                    message: "You have mail",
-                    type: .info
-                ) {
-                    Image(systemName: "envelope.fill")
-                        .font(.title2)
-                        .foregroundStyle(.white)
-                }
-            }
-            
-            // Custom view
-            Button("Badge") {
-                toast.present(
-                    title: "Achievement!",
-                    message: "Level up!",
-                    type: .success
-                ) {
-                    ZStack {
-                        Circle()
-                            .fill(.white.opacity(0.2))
-                            .frame(width: 30, height: 30)
-                        Image(systemName: "star.fill")
-                            .foregroundStyle(.yellow)
-                    }
-                }
-            }
-        }
-    }
-}
-```
-
-## Dialog Features 💬
-
-### Basic Dialog Usage
-```swift
-struct BasicDialogExample: View {
-    @State private var showDialog = false
-    
-    var body: some View {
-        Button("Show Custom Dialog") {
-            showDialog = true
-        }
-        .dialog(isPresented: $showDialog) {
-            VStack(spacing: 20) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.green)
-                
-                Text("Success!")
-                    .font(.title)
-                
-                Text("Your action was completed successfully.")
-                    .multilineTextAlignment(.center)
-                
-                Button("Close") {
-                    showDialog = false
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding()
-        }
-    }
-}
-```
-
-### Pre-built Dialog Components
-
-#### Alert Dialog
-```swift
-struct AlertDialogExample: View {
-    @Environment(\.toast) var toast
-    @State private var showAlert = false
-    
-    var body: some View {
-        Button("Show Alert") {
-            showAlert = true
-        }
-        .dialog(isPresented: $showAlert) {
-            AlertDialog(
-                title: "Update Available",
-                message: "A new version is available. Would you like to update now?",
-                primaryButton: DialogButton(title: "Update") {
-                    showAlert = false
-                    toast.success(title: "Updating...")
-                },
-                secondaryButton: DialogButton(title: "Later") {
-                    showAlert = false
-                }
-            )
-        }
-    }
-}
-```
-
-#### Confirmation Dialog
-```swift
-struct ConfirmationDialogExample: View {
-    @Environment(\.toast) var toast
-    @State private var showConfirmation = false
-    
-    var body: some View {
-        Button("Delete Item") {
-            showConfirmation = true
-        }
-        .dialog(isPresented: $showConfirmation) {
-            ConfirmationDialog(
-                title: "Delete Item?",
-                message: "This action cannot be undone.",
-                destructiveAction: "Delete",
-                cancelAction: "Cancel",
-                onConfirm: {
-                    showConfirmation = false
-                    toast.success(title: "Deleted")
-                },
-                onCancel: {
-                    showConfirmation = false
-                    toast.info(title: "Cancelled")
-                }
-            )
-        }
-    }
-}
-```
-
-### Custom Dialog Configuration
-```swift
-struct CustomDialogExample: View {
-    @State private var showDialog = false
-    
-    var body: some View {
-        Button("Custom Styled Dialog") {
-            showDialog = true
-        }
-        .dialog(
-            config: DialogConfiguration(
-                backgroundColor: .black.opacity(0.5),
-                cornerRadius: 20,
-                shadowRadius: 25,
-                maxWidth: 400,
-                horizontalPadding: 24,
-                dismissOnBackgroundTap: true,
-                animationDuration: 0.35
-            ),
-            isPresented: $showDialog
-        ) {
-            VStack(spacing: 20) {
-                Text("Custom Dialog")
-                    .font(.title)
-                
-                Text("With custom configuration")
-                
-                Button("Close") {
-                    showDialog = false
-                }
-            }
-            .padding()
-        }
-    }
-}
-```
-
-### Dialog Configuration Presets
-```swift
-// Default configuration
-.dialog(config: .default, isPresented: $showDialog) { }
-
-// Compact dialog
-.dialog(config: .compact, isPresented: $showDialog) { }
-
-// Wide dialog
-.dialog(config: .wide, isPresented: $showDialog) { }
-```
-
-### Combining Toasts & Dialogs
-
-The real power comes from using toasts and dialogs together:
-```swift
-struct CombinedExample: View {
-    @Environment(\.toast) var toast
-    @State private var showDeleteDialog = false
-    
-    var body: some View {
-        Button("Delete Account") {
-            showDeleteDialog = true
-        }
-        .dialog(isPresented: $showDeleteDialog) {
-            ConfirmationDialog(
-                title: "Delete Account?",
-                message: "All your data will be permanently deleted. This action cannot be undone.",
-                destructiveAction: "Delete Forever",
-                cancelAction: "Cancel",
-                onConfirm: {
-                    showDeleteDialog = false
-                    performDeletion()
-                },
-                onCancel: {
-                    showDeleteDialog = false
-                    toast.info(title: "Cancelled", message: "Your account is safe")
-                }
-            )
-        }
-    }
-    
-    func performDeletion() {
-        toast.progress(title: "Deleting account...")
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            toast.dismiss()
-            toast.success(
-                title: "Account Deleted",
-                message: "Your account has been permanently deleted"
-            )
-        }
-    }
-}
-```
-
-### Form Dialog Example
-```swift
-struct FormDialogExample: View {
-    @State private var showForm = false
-    @State private var name = ""
-    @State private var email = ""
-    @Environment(\.toast) var toast
-    
-    var body: some View {
-        Button("Add User") {
-            showForm = true
-        }
-        .dialog(isPresented: $showForm) {
-            VStack(spacing: 20) {
-                Text("New User")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                
-                VStack(spacing: 12) {
-                    TextField("Name", text: $name)
-                        .textFieldStyle(.roundedBorder)
-                    
-                    TextField("Email", text: $email)
-                        .textFieldStyle(.roundedBorder)
-                        .keyboardType(.emailAddress)
-                }
-                
-                HStack(spacing: 12) {
-                    Button("Cancel") {
-                        showForm = false
-                        name = ""
-                        email = ""
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(12)
-                    
-                    Button("Save") {
-                        showForm = false
-                        toast.success(
-                            title: "User Added",
-                            message: "\(name) has been added"
-                        )
-                        name = ""
-                        email = ""
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundStyle(.white)
-                    .cornerRadius(12)
-                }
-            }
-            .padding()
-        }
-    }
-}
-```
-
-## Real-World Examples
-
-### Error Reporting with Copy
-```swift
-struct ErrorReportingExample: View {
-    @Environment(\.toast) var toast
-    
-    func handleAPIError(_ error: Error) {
-        toast.error(
-            title: "Network Error",
-            message: """
-            Code: 500
-            Message: \(error.localizedDescription)
-            Timestamp: \(Date().ISO8601Format())
-            """,
-            duration: 15.0,
-            enableCopy: true, // User can copy to report the bug
-            showCloseButton: true
-        )
-    }
-    
-    var body: some View {
-        Button("Simulate API Error") {
-            let error = NSError(
-                domain: "com.app",
-                code: 500,
-                userInfo: [NSLocalizedDescriptionKey: "Internal Server Error"]
-            )
-            handleAPIError(error)
-        }
-    }
-}
-```
-
-### Delete Confirmation Flow
-```swift
-struct DeleteFlowExample: View {
-    @Environment(\.toast) var toast
-    @State private var showDeleteDialog = false
-    @State private var itemToDelete = "Document.pdf"
-    
-    var body: some View {
-        Button("Delete \(itemToDelete)") {
-            showDeleteDialog = true
-        }
-        .dialog(isPresented: $showDeleteDialog) {
-            ConfirmationDialog(
-                title: "Delete \(itemToDelete)?",
-                message: "This file will be moved to trash. You can restore it within 30 days.",
-                destructiveAction: "Delete",
-                cancelAction: "Keep",
-                onConfirm: {
-                    showDeleteDialog = false
-                    deleteFile()
-                },
-                onCancel: {
-                    showDeleteDialog = false
-                }
-            )
-        }
-    }
-    
-    func deleteFile() {
-        toast.progress(title: "Deleting...")
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            toast.dismiss()
-            toast.success(
-                title: "Deleted",
-                message: "\(itemToDelete) moved to trash"
-            )
-        }
-    }
-}
-```
-
-### Form Validation with Toasts
-```swift
-struct SignupView: View {
-    @Environment(\.toast) var toast
-    @State private var email = ""
-    @State private var password = ""
-    @State private var confirmPassword = ""
-    
-    var body: some View {
-        Form {
-            TextField("Email", text: $email)
-            SecureField("Password", text: $password)
-            SecureField("Confirm", text: $confirmPassword)
-            
-            Button("Sign Up") {
-                validateAndSignUp()
-            }
-        }
-    }
-    
-    func validateAndSignUp() {
-        guard !email.isEmpty else {
-            toast.warning(title: "Email Required")
-            return
-        }
-        
-        guard password.count >= 8 else {
-            toast.warning(
-                title: "Weak Password",
-                message: "Use at least 8 characters"
-            )
-            return
-        }
-        
-        guard password == confirmPassword else {
-            toast.error(
-                title: "Passwords Don't Match",
-                message: "Please check your passwords"
-            )
-            return
-        }
-        
-        toast.success(title: "Account Created!")
-    }
-}
-```
-
-## ViewModel Integration
-
-### Method 1: Pass as Parameter (Recommended)
-```swift
-import SwiftUI
-import ToastUI
-
-class DataViewModel: ObservableObject {
-    @Published var data: [String] = []
-    
-    func loadData(toast: ToastManager) async {
-        toast.progress(title: "Loading...", alignment: .bottom)
-        
-        do {
-            try await Task.sleep(nanoseconds: 2_000_000_000)
-            data = ["Item 1", "Item 2", "Item 3"]
-            toast.success(
-                title: "Success",
-                message: "Loaded \(data.count) items",
-                alignment: .bottom
-            )
-        } catch {
-            toast.error(
-                title: "Error",
-                message: error.localizedDescription,
-                alignment: .bottom,
-                enableCopy: true // Let user copy error for support
-            )
-        }
-    }
-}
-
-struct DataView: View {
-    @Environment(\.toast) var toast
-    @StateObject private var viewModel = DataViewModel()
-    
-    var body: some View {
-        VStack {
-            Button("Load Data") {
-                Task {
-                    await viewModel.loadData(toast: toast)
-                }
-            }
-            
-            List(viewModel.data, id: \.self) { item in
-                Text(item)
-            }
-        }
-    }
-}
-```
-
-## API Reference
-
-### Toast Manager Methods
-```swift
-// Generic present
-func present(
-    title: String,
-    message: String? = nil,
-    type: ToastType,
-    duration: TimeInterval = 3.0,
-    alignment: ToastAlignment = .top,
-    backgroundColor: Color? = nil,
-    configuration: ToastConfiguration = .default,
-    showCloseButton: Bool = true,
-    enableCopy: Bool = false // ← NEW
-)
-
-// Convenience methods (all support enableCopy)
-func success(title: String, message: String? = nil, duration: TimeInterval = 3.0, alignment: ToastAlignment = .top, backgroundColor: Color? = nil, configuration: ToastConfiguration = .default, showCloseButton: Bool = true, enableCopy: Bool = false)
-
-func error(title: String, message: String? = nil, duration: TimeInterval = 3.0, alignment: ToastAlignment = .top, backgroundColor: Color? = nil, configuration: ToastConfiguration = .default, showCloseButton: Bool = true, enableCopy: Bool = false)
-
-func warning(title: String, message: String? = nil, duration: TimeInterval = 3.0, alignment: ToastAlignment = .top, backgroundColor: Color? = nil, configuration: ToastConfiguration = .default, showCloseButton: Bool = true, enableCopy: Bool = false)
-
-func info(title: String, message: String? = nil, duration: TimeInterval = 3.0, alignment: ToastAlignment = .top, backgroundColor: Color? = nil, configuration: ToastConfiguration = .default, showCloseButton: Bool = true, enableCopy: Bool = false)
-
-// Dismiss methods
-func dismiss() // Dismisses topmost toast
-func dismissAll() // Dismisses all toasts
-```
-
-### Dialog View Modifier
-```swift
-func dialog<Content: View>(
-    config: DialogConfiguration = .default,
-    isPresented: Binding<Bool>,
-    onDismiss: (() -> Void)? = nil,
-    @ViewBuilder content: @escaping () -> Content
-) -> some View
-```
-
-### Pre-built Dialog Components
-```swift
-// Alert Dialog
-AlertDialog(
-    title: String,
-    message: String,
-    primaryButton: DialogButton,
-    secondaryButton: DialogButton? = nil
-)
-
-// Confirmation Dialog
-ConfirmationDialog(
-    title: String,
-    message: String,
-    destructiveAction: String = "Delete",
-    cancelAction: String = "Cancel",
-    onConfirm: @escaping () -> Void,
-    onCancel: @escaping () -> Void
-)
-
-// Dialog Button
-DialogButton(
-    title: String,
-    style: DialogButtonStyle = .primary,
-    action: @escaping () -> Void
-)
-```
-
-### DialogConfiguration
-```swift
-public struct DialogConfiguration {
-    public let backgroundColor: Color // Backdrop color
-    public let cornerRadius: CGFloat // Dialog corner radius
-    public let shadowRadius: CGFloat // Shadow blur radius
-    public let maxWidth: CGFloat // Maximum dialog width
-    public let horizontalPadding: CGFloat // Screen edge padding
-    public let dismissOnBackgroundTap: Bool // Tap backdrop to dismiss
-    public let animationDuration: Double // Animation speed
-    
-    // Pre-defined styles
-    public static let `default`: DialogConfiguration
-    public static let compact: DialogConfiguration
-    public static let wide: DialogConfiguration
-}
-```
-
-### ToastConfiguration
-```swift
-public struct ToastConfiguration {
-    public let cornerRadius: CGFloat
-    public let shadowRadius: CGFloat
-    public let shadowColor: Color
-    public let shadowX: CGFloat
-    public let shadowY: CGFloat
-    public let horizontalPadding: CGFloat
-    public let verticalPadding: CGFloat
-    
-    // Pre-defined styles
-    public static let `default`: ToastConfiguration
-    public static let compact: ToastConfiguration
-    public static let rounded: ToastConfiguration
-    public static let minimal: ToastConfiguration
-}
-```
-
-## Best Practices
-
-### ✅ Do
-
-**Toasts:**
-- Use appropriate toast types for different scenarios
-- Keep messages concise and actionable
-- Enable copy for error messages and technical info
-- Use progress toasts for operations over 1 second
-- Choose appropriate alignment based on context
-- Use custom colors for brand consistency
-
-**Dialogs:**
-- Use dialogs for actions requiring confirmation
-- Keep dialog content focused and minimal
-- Provide clear primary and secondary actions
-- Use pre-built components for common patterns
-- Combine with toasts for complete feedback flow
-
-### ❌ Don't
-
-**Toasts:**
-- Don't use toasts for critical errors requiring user action (use dialogs)
-- Don't set extremely long durations (> 10 seconds)
-- Don't forget to dismiss progress toasts
-- Don't stack too many toasts (users get overwhelmed)
-
-**Dialogs:**
-- Don't use dialogs for simple notifications (use toasts)
-- Don't create forms with too many fields
-- Don't forget to handle both confirm and cancel actions
-- Don't disable background tap dismiss unless necessary
-
-## Troubleshooting
-
-### Toast not showing?
-
-Make sure `.setupToastUI()` is in your root view:
-```swift
-@main
-struct MyApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .setupToastUI() // ← Required!
-        }
-    }
-}
-```
-
-### Copy button not working?
-
-The copy button should work automatically:
-1. Make sure `enableCopy: true` is set
-2. Click the document icon (changes to checkmark on success)
-3. Works on both iOS (UIPasteboard) and macOS (NSPasteboard)
-
-### Dialog not dismissing?
-
-Check these common issues:
-1. Make sure `isPresented` is a `@State` variable
-2. Set `isPresented = false` in your button actions
-3. Check `dismissOnBackgroundTap` in config
-4. Ensure no animation conflicts
-
-### Using with multiple windows?
-
-Each window needs its own `.setupToastUI()`:
-```swift
-WindowGroup {
-    ContentView()
-        .setupToastUI()
-}
-
-WindowGroup("Settings") {
-    SettingsView()
-        .setupToastUI()
-}
-```
-
-## What's New in v3.2.0
-
-### 📋 Copy to Clipboard Feature
-- One-tap copy for error messages and logs
-- Visual feedback with icon animation
-- Cross-platform support (iOS & macOS)
-- Perfect for bug reports and support
-
-### 💬 Dialog System
-- Custom dialog support with any SwiftUI view
-- Pre-built Alert and Confirmation dialogs
-- Configurable appearance and behavior
-- Seamless integration with toast system
-- Smooth bouncy animations
-
-### 🔧 Improvements
-- Better error handling examples
-- Enhanced documentation
-- More real-world use cases
-- Performance optimizations
-
-## Roadmap
-
-- [ ] Swipe to dismiss gesture
-- [ ] Haptic feedback support
-- [ ] Sound effects
-- [ ] More pre-built dialog types
-- [ ] Dialog queue management
-- [ ] Accessibility improvements
-- [ ] macOS menu bar integration
-- [ ] Custom dialog positions
-
-## Performance
-
-- ✅ Lightweight - Minimal memory footprint
-- ✅ Efficient - Reuses views, cancels timers properly
-- ✅ Smooth - 60fps animations
-- ✅ Thread-safe - All operations on MainActor
-- ✅ Swift 6 - Modern concurrency model
-
-## License
-
-MIT License - feel free to use in your projects!
-
-## Contributing
-
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## Author
-
-Pardip Bhatti - iOS Developer & Mobile Architect
-- GitHub: [@debuging-life](https://github.com/debuging-life)
-- Twitter: [@your_handle](https://twitter.com/your_handle)
-
-## Acknowledgments
-
-Built with ❤️ using SwiftUI and Swift 6
-
-Special thanks to the SwiftUI community for inspiration and feedback.
 
 ---
 
-**If you find this package useful, please ⭐ star the repo!**
+## 📖 Complete Guide
 
-**Questions or issues?** Open an issue on GitHub
+## Table of Contents
 
-**Need help?** Check out the [Examples](Examples/) folder for complete working samples
+1. [Toast Notifications](#toast-notifications)
+2. [UI Overlay System](#ui-overlay-system)
+3. [Overlay Configuration](#overlay-configuration)
+4. [Custom Loaders](#custom-loaders)
+5. [Custom Overlays](#custom-overlays)
+6. [Rive Animations](#rive-animations)
+7. [Dialog System](#dialog-system)
+8. [Advanced Features](#advanced-features)
+
+---
+
+## Toast Notifications
+
+### Basic Toast Types
+
+```swift
+@Environment(\.toast) var toast
+
+// Success
+toast.success("Saved successfully!")
+
+// Error
+toast.error("Failed to save")
+
+// Warning
+toast.warning("Low battery")
+
+// Info
+toast.info("New update available")
+
+// Glass effect (iOS 26+, auto-fallback)
+toast.glass("Beautiful glass toast", alignment: .top)
+
+// Progress (single, non-stacking)
+toast.progress("Uploading...", alignment: .center)
+```
+
+### Toast with Message
+
+```swift
+toast.success(
+    "Payment Complete",
+    message: "Your order #12345 has been confirmed"
+)
+```
+
+### Custom Alignment
+
+```swift
+toast.success("Top toast", alignment: .top)
+toast.info("Center toast", alignment: .center)
+toast.error("Bottom toast", alignment: .bottom)
+```
+
+### Custom Icon
+
+```swift
+toast.success("Custom icon") {
+    Image(systemName: "star.fill")
+        .font(.largeTitle)
+        .foregroundStyle(.yellow)
+}
+```
+
+### Custom Colors
+
+```swift
+toast.show(
+    ToastMessage(
+        type: .custom(
+            backgroundColor: .purple,
+            foregroundColor: .white,
+            iconColor: .yellow
+        ),
+        title: "Custom Colors",
+        alignment: .top
+    )
+)
+```
+
+### Copy to Clipboard
+
+```swift
+// Shows a copy button that copies the message
+toast.error("Error: File not found", enableCopy: true)
+```
+
+---
+
+## UI Overlay System
+
+The UI Overlay system provides a powerful way to show loading states, empty states, errors, and custom content over your UI.
+
+### Basic Usage
+
+```swift
+struct MyView: View {
+    @State private var uiState: UIState = .idle
+
+    var body: some View {
+        YourContent()
+            .uiOverlay(state: $uiState)
+    }
+
+    func loadData() {
+        uiState = .loading(message: "Loading...")
+
+        // After loading
+        uiState = .success(message: "Data loaded!")
+
+        // Or on error
+        uiState = .failure(message: "Failed to load")
+    }
+}
+```
+
+### Built-in States
+
+```swift
+// Loading
+uiState = .loading(message: "Please wait...")
+
+// Empty state
+uiState = .empty(message: "No data found")
+
+// Failure
+uiState = .failure(message: "Network error")
+
+// Success
+uiState = .success(message: "Done!")
+
+// Idle (dismisses overlay)
+uiState = .idle
+```
+
+### Retry Callback
+
+```swift
+.uiOverlay(
+    state: $uiState,
+    onRetry: {
+        // Retry logic
+        await loadData()
+    }
+)
+```
+
+### Custom Icons
+
+```swift
+// Empty state with custom icon
+uiState = .empty(message: "No favorites yet") {
+    Image(systemName: "heart.slash")
+        .font(.system(size: 50))
+        .foregroundStyle(.pink)
+}
+
+// Success with custom icon
+uiState = .success(message: "Uploaded!") {
+    Image(systemName: "cloud.fill")
+        .font(.system(size: 50))
+        .foregroundStyle(.blue)
+}
+```
+
+---
+
+## Overlay Configuration
+
+The configuration system provides clean, sophisticated control over overlay appearance and behavior.
+
+### Configuration Structure
+
+```swift
+UIOverlayConfiguration(
+    style: OverlayStyle,                    // Glass or solid background
+    titleStyle: TextStyleConfiguration,     // Title text styling
+    messageStyle: TextStyleConfiguration,   // Message text styling
+    showCloseButton: Bool,                  // Show close button
+    autoDismissAfter: TimeInterval?         // Auto-dismiss duration
+)
+```
+
+### Overlay Styles
+
+#### Glass Effect
+```swift
+.glass(
+    backdropOpacity: Double = 0.3,
+    cornerRadius: CGFloat = 20,
+    maxWidth: CGFloat = 340
+)
+```
+
+#### Solid Color
+```swift
+.solid(
+    backgroundColor: Color,
+    opacity: Double = 1.0,
+    backdropOpacity: Double = 0.3,
+    cornerRadius: CGFloat = 20,
+    maxWidth: CGFloat = 340
+)
+```
+
+### Text Style Configuration
+
+```swift
+TextStyleConfiguration(
+    color: Color = .primary,
+    font: Font = .headline,
+    fontWeight: Font.Weight = .semibold
+)
+```
+
+**Built-in Presets:**
+- `.title` - Default title style (primary, headline, semibold)
+- `.message` - Default message style (secondary, subheadline, regular)
+- `.largeBoldTitle` - Large impactful title
+- `.smallLightMessage` - Subtle small message
+
+### Configuration Examples
+
+#### Example 1: Simple Glass Effect
+```swift
+.uiOverlay(
+    state: $uiState,
+    configuration: .init(
+        style: .glass()
+    )
+)
+```
+
+#### Example 2: Custom Glass with Modified Properties
+```swift
+.uiOverlay(
+    state: $uiState,
+    configuration: .init(
+        style: .glass(
+            backdropOpacity: 0.5,
+            cornerRadius: 24,
+            maxWidth: 400
+        ),
+        showCloseButton: true
+    )
+)
+```
+
+#### Example 3: Solid Color with Custom Text Styles
+```swift
+.uiOverlay(
+    state: $uiState,
+    configuration: .init(
+        style: .solid(
+            backgroundColor: .white,
+            opacity: 1.0,
+            backdropOpacity: 0.5,
+            cornerRadius: 24,
+            maxWidth: 380
+        ),
+        titleStyle: TextStyleConfiguration(
+            color: .blue,
+            font: .title2,
+            fontWeight: .bold
+        ),
+        messageStyle: TextStyleConfiguration(
+            color: .gray,
+            font: .body,
+            fontWeight: .regular
+        ),
+        showCloseButton: true,
+        autoDismissAfter: 3.0
+    )
+)
+```
+
+#### Example 4: Dark Theme
+```swift
+.uiOverlay(
+    state: $uiState,
+    configuration: .init(
+        style: .solid(
+            backgroundColor: .black,
+            opacity: 0.95,
+            backdropOpacity: 0.4
+        ),
+        titleStyle: TextStyleConfiguration(
+            color: .white,
+            font: .headline,
+            fontWeight: .semibold
+        ),
+        messageStyle: TextStyleConfiguration(
+            color: .white.opacity(0.7),
+            font: .subheadline,
+            fontWeight: .regular
+        ),
+        showCloseButton: true
+    )
+)
+```
+
+#### Example 5: Using Presets
+```swift
+.uiOverlay(
+    state: $uiState,
+    configuration: .init(
+        style: .glass(),
+        titleStyle: .largeBoldTitle,
+        messageStyle: .smallLightMessage
+    )
+)
+```
+
+### Creating Custom Text Style Presets
+
+```swift
+extension TextStyleConfiguration {
+    static let errorStyle = TextStyleConfiguration(
+        color: .red,
+        font: .title3,
+        fontWeight: .bold
+    )
+
+    static let successStyle = TextStyleConfiguration(
+        color: .green,
+        font: .headline,
+        fontWeight: .semibold
+    )
+}
+
+// Usage
+.uiOverlay(
+    state: $uiState,
+    configuration: .init(
+        style: .glass(),
+        titleStyle: .errorStyle,
+        messageStyle: .message
+    )
+)
+```
+
+---
+
+## Custom Loaders
+
+Create your own loading indicators or use the default one.
+
+### Default Loader
+
+```swift
+// Uses built-in gradient circle loader
+uiState = .loading(message: "Loading...")
+```
+
+### Custom Loader
+
+```swift
+// Bouncing dots
+uiState = .loading(message: "Please wait...") {
+    HStack(spacing: 8) {
+        ForEach(0..<3) { index in
+            Circle()
+                .fill(Color.blue)
+                .frame(width: 12, height: 12)
+                .offset(y: animating ? -15 : 0)
+                .animation(
+                    .easeInOut(duration: 0.6)
+                    .repeatForever()
+                    .delay(Double(index) * 0.2),
+                    value: animating
+                )
+        }
+    }
+}
+```
+
+### System ProgressView
+
+```swift
+uiState = .loading(message: "Loading...") {
+    ProgressView()
+        .progressViewStyle(.circular)
+        .scaleEffect(1.5)
+        .tint(.blue)
+}
+```
+
+### Custom Animated Loader
+
+```swift
+uiState = .loading(message: "Uploading...") {
+    ZStack {
+        ForEach(0..<3, id: \.self) { index in
+            Circle()
+                .stroke(Color.blue.opacity(0.5), lineWidth: 2)
+                .scaleEffect(scale + CGFloat(index) * 0.3)
+                .opacity(opacity - Double(index) * 0.3)
+        }
+    }
+    .onAppear {
+        withAnimation(
+            .easeInOut(duration: 1.5)
+            .repeatForever(autoreverses: false)
+        ) {
+            scale = 1.5
+            opacity = 0
+        }
+    }
+}
+```
+
+---
+
+## Custom Overlays
+
+Create completely custom overlay content.
+
+### Basic Custom Overlay
+
+```swift
+uiState = .custom {
+    VStack(spacing: 16) {
+        Image(systemName: "star.fill")
+            .font(.system(size: 60))
+            .foregroundStyle(.yellow)
+
+        Text("You earned a star!")
+            .font(.title2)
+            .fontWeight(.bold)
+
+        Button("Awesome!") {
+            uiState = .idle
+        }
+        .buttonStyle(.borderedProminent)
+    }
+    .padding()
+}
+```
+
+### Interactive Rating Overlay
+
+```swift
+@State private var rating = 0
+
+uiState = .custom(id: "rating") {
+    VStack(spacing: 20) {
+        Text("Rate Your Experience")
+            .font(.title2)
+            .fontWeight(.bold)
+
+        HStack(spacing: 12) {
+            ForEach(1...5, id: \.self) { star in
+                Button {
+                    rating = star
+                } label: {
+                    Image(systemName: star <= rating ? "star.fill" : "star")
+                        .font(.system(size: 32))
+                        .foregroundStyle(star <= rating ? .yellow : .gray)
+                }
+            }
+        }
+
+        if rating > 0 {
+            Text("Selected: \(rating) stars")
+                .font(.caption)
+        }
+    }
+    .padding()
+}
+```
+
+---
+
+## Rive Animations
+
+Integrate Rive animations into your overlays.
+
+### Setup
+
+1. Add your `.riv` file to your Xcode project
+2. Include it in "Copy Bundle Resources"
+3. Use the `.riveAnimation()` modifier
+
+### Basic Rive Overlay
+
+```swift
+uiState = .riveAnimation(
+    riveName: "loading_spinner",
+    stateMachineName: "State Machine 1",
+    title: "Processing",
+    message: "Please wait..."
+)
+```
+
+### Rive with Animation Name
+
+```swift
+uiState = .riveAnimation(
+    riveName: "success_animation",
+    animationName: "celebrate",
+    title: "Success!",
+    message: "Task completed"
+)
+```
+
+---
+
+## Dialog System
+
+### Basic Dialog
+
+```swift
+@State private var showDialog = false
+
+Button("Show Dialog") {
+    showDialog = true
+}
+.dialog(isPresented: $showDialog) {
+    VStack(spacing: 20) {
+        Text("Custom Dialog")
+            .font(.title)
+
+        Text("This is a custom dialog")
+
+        Button("Close") {
+            showDialog = false
+        }
+    }
+    .padding()
+}
+```
+
+### Dialog Configuration
+
+```swift
+.dialog(
+    config: DialogConfiguration(
+        backgroundColor: .black.opacity(0.6),
+        cornerRadius: 24,
+        dismissOnBackgroundTap: true,
+        animationDuration: 0.35
+    ),
+    isPresented: $showDialog
+) {
+    DialogContent()
+}
+```
+
+---
+
+## Advanced Features
+
+### Combining Toasts and Overlays
+
+```swift
+struct MyView: View {
+    @Environment(\.toast) var toast
+    @State private var uiState: UIState = .idle
+
+    func performAction() async {
+        // Show loading overlay
+        uiState = .loading(message: "Processing...")
+
+        do {
+            try await someAsyncTask()
+
+            // Dismiss overlay
+            uiState = .idle
+
+            // Show success toast
+            toast.success("Task completed!")
+        } catch {
+            // Dismiss overlay
+            uiState = .idle
+
+            // Show error toast
+            toast.error("Task failed", enableCopy: true)
+        }
+    }
+}
+```
+
+### ViewModel Integration
+
+```swift
+@Observable
+class MyViewModel {
+    var uiState: UIState = .idle
+
+    func loadData() async {
+        uiState = .loading(message: "Loading...")
+
+        do {
+            let data = try await api.fetchData()
+            uiState = data.isEmpty ? .empty(message: "No data") : .idle
+        } catch {
+            uiState = .failure(message: error.localizedDescription)
+        }
+    }
+}
+
+struct MyView: View {
+    @State private var viewModel = MyViewModel()
+
+    var body: some View {
+        Content()
+            .uiOverlay(
+                state: $viewModel.uiState,
+                onRetry: {
+                    await viewModel.loadData()
+                }
+            )
+    }
+}
+```
+
+### Network Request Pattern
+
+```swift
+func fetchUsers() async {
+    uiState = .loading(message: "Fetching users...") {
+        // Custom loader
+        ProgressView()
+            .scaleEffect(1.5)
+    }
+
+    do {
+        let users = try await api.getUsers()
+
+        if users.isEmpty {
+            uiState = .empty(message: "No users found")
+        } else {
+            // Process users
+            uiState = .idle
+            toast.success("Loaded \(users.count) users")
+        }
+    } catch {
+        uiState = .failure(message: "Failed to fetch users")
+    }
+}
+```
+
+---
+
+## Platform Support
+
+### iOS 26+ Glass Effect
+
+On iOS 26+, the `.glass` style uses `.ultraThinMaterial` for a true glass effect.
+
+### iOS 16-25 Fallback
+
+On iOS 16-25, the `.glass` style automatically falls back to `.regularMaterial`.
+
+### macOS Support
+
+Full support on macOS 13.1+. Toast notifications use overlay-based rendering on macOS.
+
+---
+
+## API Reference
+
+### Toast API
+
+```swift
+@Environment(\.toast) var toast
+
+// Show methods
+toast.show(_ message: ToastMessage)
+toast.success(_ title: String, message: String? = nil, alignment: ToastAlignment = .top)
+toast.error(_ title: String, message: String? = nil, alignment: ToastAlignment = .top, enableCopy: Bool = false)
+toast.warning(_ title: String, message: String? = nil, alignment: ToastAlignment = .top)
+toast.info(_ title: String, message: String? = nil, alignment: ToastAlignment = .top)
+toast.glass(_ title: String, message: String? = nil, alignment: ToastAlignment = .top)
+toast.progress(_ title: String, message: String? = nil, alignment: ToastAlignment = .center)
+
+// Dismiss
+toast.dismiss(id: UUID)
+```
+
+### UIState Enum
+
+```swift
+public enum UIState {
+    case idle
+    case loading(message: String? = nil, loader: AnyView? = nil)
+    case empty(message: String = "No data found", icon: AnyView? = nil)
+    case failure(message: String, icon: AnyView? = nil)
+    case success(message: String, icon: AnyView? = nil)
+    case custom(id: String, view: AnyView)
+    case rive(id: String, riveName: String, stateMachineName: String? = nil, animationName: String? = nil, title: String? = nil, message: String? = nil)
+}
+```
+
+### OverlayStyle Enum
+
+```swift
+public enum OverlayStyle {
+    case glass(
+        backdropOpacity: Double = 0.3,
+        cornerRadius: CGFloat = 20,
+        maxWidth: CGFloat = 340
+    )
+
+    case solid(
+        backgroundColor: Color,
+        opacity: Double = 1.0,
+        backdropOpacity: Double = 0.3,
+        cornerRadius: CGFloat = 20,
+        maxWidth: CGFloat = 340
+    )
+}
+```
+
+### TextStyleConfiguration
+
+```swift
+public struct TextStyleConfiguration {
+    public let color: Color
+    public let font: Font
+    public let fontWeight: Font.Weight
+
+    // Presets
+    public static let title: TextStyleConfiguration
+    public static let message: TextStyleConfiguration
+    public static let largeBoldTitle: TextStyleConfiguration
+    public static let smallLightMessage: TextStyleConfiguration
+}
+```
+
+### UIOverlayConfiguration
+
+```swift
+public struct UIOverlayConfiguration {
+    public let style: OverlayStyle
+    public let titleStyle: TextStyleConfiguration
+    public let messageStyle: TextStyleConfiguration
+    public let showCloseButton: Bool
+    public let autoDismissAfter: TimeInterval?
+
+    // Computed properties from style
+    public var backdropOpacity: Double
+    public var cornerRadius: CGFloat
+    public var maxWidth: CGFloat
+    public var backgroundColor: Color?
+    public var overlayOpacity: Double?
+}
+```
+
+---
+
+## Examples
+
+Check out the included example files:
+- `ToastExamplesView.swift` - Toast notifications
+- `CustomLoaderExamples.swift` - Custom loading indicators
+- `CustomUIStateExamples.swift` - Custom overlays and Rive animations
+- `UIOverlayAdvancedExamples.swift` - Advanced overlay features
+- `UIOverlayConfigurationExamples.swift` - Configuration examples
+
+---
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+---
+
+## License
+
+ToastUI is available under the MIT license. See the LICENSE file for more info.
+
+---
+
+## Credits
+
+Created by [Pardip Bhatti](https://github.com/debuging-life)
+
+---
+
+## Support
+
+If you find this package useful, please consider:
+- ⭐️ Starring the repo
+- 🐛 Reporting issues
+- 💡 Suggesting new features
+- 📖 Improving documentation
+
+---
+
+**Made with ❤️ for the SwiftUI community**

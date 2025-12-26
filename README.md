@@ -311,11 +311,19 @@ UIOverlayConfiguration(
 #### Glass Effect
 ```swift
 .glass(
+    intensity: GlassIntensity = .ultraThin,
     backdropOpacity: Double = 0.3,
     cornerRadius: CGFloat = 20,
     maxWidth: CGFloat = 340
 )
 ```
+
+**Glass Intensity Options:**
+- `.ultraThin` - Lightest blur effect (default)
+- `.thin` - Light blur effect
+- `.regular` - Medium blur effect
+- `.thick` - Heavy blur effect
+- `.ultraThick` - Heaviest blur effect
 
 #### Solid Color
 ```swift
@@ -356,12 +364,34 @@ TextStyleConfiguration(
 )
 ```
 
-#### Example 2: Custom Glass with Modified Properties
+#### Example 2: Glass Effect with Different Intensities
+```swift
+// Ultra thin glass (lightest)
+.uiOverlay(
+    state: $uiState,
+    configuration: .glass
+)
+
+// Thick glass (heavy blur)
+.uiOverlay(
+    state: $uiState,
+    configuration: .glassThick
+)
+
+// Custom glass intensity
+.uiOverlay(
+    state: $uiState,
+    configuration: .glass(intensity: .regular, backdropOpacity: 0.5)
+)
+```
+
+#### Example 3: Custom Glass with Modified Properties
 ```swift
 .uiOverlay(
     state: $uiState,
     configuration: .init(
         style: .glass(
+            intensity: .thick,
             backdropOpacity: 0.5,
             cornerRadius: 24,
             maxWidth: 400
@@ -371,7 +401,7 @@ TextStyleConfiguration(
 )
 ```
 
-#### Example 3: Solid Color with Custom Text Styles
+#### Example 4: Solid Color with Custom Text Styles
 ```swift
 .uiOverlay(
     state: $uiState,
@@ -426,10 +456,23 @@ TextStyleConfiguration(
 
 #### Example 5: Using Presets
 ```swift
+// Built-in glass presets
+.uiOverlay(state: $uiState, configuration: .glass)           // Ultra-thin (default)
+.uiOverlay(state: $uiState, configuration: .glassThin)       // Thin blur
+.uiOverlay(state: $uiState, configuration: .glassRegular)    // Regular blur
+.uiOverlay(state: $uiState, configuration: .glassThick)      // Thick blur
+.uiOverlay(state: $uiState, configuration: .glassUltraThick) // Ultra-thick blur
+.uiOverlay(state: $uiState, configuration: .glassWithClose)  // Glass with close button
+
+// Solid color presets
+.uiOverlay(state: $uiState, configuration: .default)         // White background
+.uiOverlay(state: $uiState, configuration: .solidBlack)      // Black background
+
+// Custom text styles with preset
 .uiOverlay(
     state: $uiState,
     configuration: .init(
-        style: .glass(),
+        style: .glass(intensity: .thick),
         titleStyle: .largeBoldTitle,
         messageStyle: .smallLightMessage
     )

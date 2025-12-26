@@ -42,7 +42,7 @@ public struct DefaultUIOverlay: View {
 
             // Content card
             switch configuration.style {
-            case .glass:
+            case .glass(_, _, _, _):
                 if supportsGlassEffect {
                     if #available(iOS 26.0, *) {
                         glassContentView
@@ -65,12 +65,13 @@ public struct DefaultUIOverlay: View {
 
     @available(iOS 26.0, *)
     private var glassContentView: some View {
-        contentView
+        let intensity = configuration.glassIntensity ?? .ultraThin
+        return contentView
             .padding(24)
             .frame(maxWidth: configuration.maxWidth)
             .background(
                 RoundedRectangle(cornerRadius: configuration.cornerRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                    .fill(intensity.material)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: configuration.cornerRadius, style: .continuous)
@@ -83,12 +84,13 @@ public struct DefaultUIOverlay: View {
     // MARK: - Regular Material Content (iOS < 26)
 
     private var regularContentView: some View {
-        contentView
+        let intensity = configuration.glassIntensity ?? .regular
+        return contentView
             .padding(24)
             .frame(maxWidth: configuration.maxWidth)
             .background(
                 RoundedRectangle(cornerRadius: configuration.cornerRadius, style: .continuous)
-                    .fill(.regularMaterial)
+                    .fill(intensity.material)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: configuration.cornerRadius, style: .continuous)

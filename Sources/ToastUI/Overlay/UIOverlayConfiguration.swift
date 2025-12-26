@@ -7,10 +7,42 @@
 
 import SwiftUI
 
+/// Glass effect intensity level
+public enum GlassIntensity: Sendable {
+    /// Ultra-thin material (lightest blur)
+    case ultraThin
+    /// Thin material (light blur)
+    case thin
+    /// Regular material (medium blur)
+    case regular
+    /// Thick material (heavy blur)
+    case thick
+    /// Ultra-thick material (heaviest blur)
+    case ultraThick
+
+    /// Convert to SwiftUI Material
+    @available(iOS 15.0, macOS 12.0, *)
+    public var material: Material {
+        switch self {
+        case .ultraThin:
+            return .ultraThinMaterial
+        case .thin:
+            return .thinMaterial
+        case .regular:
+            return .regularMaterial
+        case .thick:
+            return .thickMaterial
+        case .ultraThick:
+            return .ultraThickMaterial
+        }
+    }
+}
+
 /// Style options for overlay background
 public enum OverlayStyle: Sendable {
-    /// Glass effect (ultra-thin material on iOS 26+, regular material on older versions)
+    /// Glass effect with configurable intensity
     case glass(
+        intensity: GlassIntensity = .ultraThin,
         backdropOpacity: Double = 0.3,
         cornerRadius: CGFloat = 20,
         maxWidth: CGFloat = 340
@@ -111,10 +143,20 @@ public struct UIOverlayConfiguration: Sendable {
 
     // MARK: - Computed Properties
 
+    /// Get glass intensity from glass style
+    public var glassIntensity: GlassIntensity? {
+        switch style {
+        case .glass(let intensity, _, _, _):
+            return intensity
+        case .solid:
+            return nil
+        }
+    }
+
     /// Get backdrop opacity from style
     public var backdropOpacity: Double {
         switch style {
-        case .glass(let backdropOpacity, _, _):
+        case .glass(_, let backdropOpacity, _, _):
             return backdropOpacity
         case .solid(_, _, let backdropOpacity, _, _):
             return backdropOpacity
@@ -124,7 +166,7 @@ public struct UIOverlayConfiguration: Sendable {
     /// Get corner radius from style
     public var cornerRadius: CGFloat {
         switch style {
-        case .glass(_, let cornerRadius, _):
+        case .glass(_, _, let cornerRadius, _):
             return cornerRadius
         case .solid(_, _, _, let cornerRadius, _):
             return cornerRadius
@@ -134,7 +176,7 @@ public struct UIOverlayConfiguration: Sendable {
     /// Get max width from style
     public var maxWidth: CGFloat {
         switch style {
-        case .glass(_, _, let maxWidth):
+        case .glass(_, _, _, let maxWidth):
             return maxWidth
         case .solid(_, _, _, _, let maxWidth):
             return maxWidth
@@ -172,8 +214,20 @@ public struct UIOverlayConfiguration: Sendable {
     /// White background with auto-dismiss after 2 seconds
     public static let autoDismiss = UIOverlayConfiguration(autoDismissAfter: 2.0)
 
-    /// Glass effect overlay
+    /// Glass effect overlay with ultra-thin material
     public static let glass = UIOverlayConfiguration(style: .glass())
+
+    /// Glass effect with thin material
+    public static let glassThin = UIOverlayConfiguration(style: .glass(intensity: .thin))
+
+    /// Glass effect with regular material
+    public static let glassRegular = UIOverlayConfiguration(style: .glass(intensity: .regular))
+
+    /// Glass effect with thick material
+    public static let glassThick = UIOverlayConfiguration(style: .glass(intensity: .thick))
+
+    /// Glass effect with ultra-thick material
+    public static let glassUltraThick = UIOverlayConfiguration(style: .glass(intensity: .ultraThick))
 
     /// Glass effect with close button
     public static let glassWithClose = UIOverlayConfiguration(
@@ -189,5 +243,10 @@ public struct UIOverlayConfiguration: Sendable {
     /// Custom solid color
     public static func solid(backgroundColor: Color, opacity: Double = 1.0) -> UIOverlayConfiguration {
         UIOverlayConfiguration(style: .solid(backgroundColor: backgroundColor, opacity: opacity))
+    }
+
+    /// Custom glass effect with specific intensity
+    public static func glass(intensity: GlassIntensity, backdropOpacity: Double = 0.3) -> UIOverlayConfiguration {
+        UIOverlayConfiguration(style: .glass(intensity: intensity, backdropOpacity: backdropOpacity))
     }
 }

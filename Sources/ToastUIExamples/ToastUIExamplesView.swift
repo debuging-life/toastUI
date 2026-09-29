@@ -29,6 +29,11 @@ public struct ToastUIExamplesView: View {
                 .tabItem {
                     Label("Dialogs", systemImage: "bubble.left.and.bubble.right.fill")
                 }
+
+            NewFeaturesExamplesView()
+                .tabItem {
+                    Label("What's new", systemImage: "sparkles")
+                }
         }
     }
 }

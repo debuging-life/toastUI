@@ -39,6 +39,11 @@ public class ToastManager: ObservableObject {
     /// Every notable thing that happens, for analytics.
     public var onEvent: (@MainActor (ToastEvent) -> Void)?
 
+    /// True while a stack is fanned out. The iOS toast window takes every touch in
+    /// that state, so the Collapse and Clear all controls — which sit outside any
+    /// toast's own rectangle — actually receive taps.
+    @Published public private(set) var isStackExpanded = false
+
     /// While true, nothing dismisses itself: the user is reading, dragging, or the
     /// stack is expanded. Timers restart when it goes back to false.
     public private(set) var isAutoDismissPaused = false
@@ -400,6 +405,12 @@ public class ToastManager: ObservableObject {
         #else
         return toast.duration
         #endif
+    }
+
+    /// Set by the host view as stacks expand and collapse.
+    func setStackExpanded(_ expanded: Bool) {
+        guard expanded != isStackExpanded else { return }
+        isStackExpanded = expanded
     }
 
     // MARK: - Pausing

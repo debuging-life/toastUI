@@ -17,8 +17,25 @@ struct ToastHostView: View {
     /// Which stacks the user has fanned out into a list.
     @State private var expanded: Set<ToastAlignment> = []
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Reduce Motion turns the springs and slides into a plain fade.
+    private var animation: Animation {
+        reduceMotion ? .easeInOut(duration: 0.2) : manager.theme.animation
+    }
+
     var body: some View {
         ZStack {
+            // Tapping anywhere else closes an expanded stack, the way Notification
+            // Centre does.
+            if !expanded.isEmpty {
+                Color.clear
+                    .contentShape(.rect)
+                    .ignoresSafeArea()
+                    .onTapGesture { collapseAll() }
+                    .accessibilityHidden(true)
+            }
+
             VStack(spacing: 0) {
                 stack(for: .top)
                 Spacer(minLength: 0)
@@ -78,6 +95,7 @@ struct ToastHostView: View {
             for alignment in expanded where !manager.toasts.contains(where: { $0.alignment == alignment }) {
                 expanded.remove(alignment)
             }
+            manager.setStackExpanded(!expanded.isEmpty)
             if ids.isEmpty { manager.setAutoDismissPaused(false) }
         }
     }
@@ -96,17 +114,28 @@ struct ToastHostView: View {
                 stackControls(for: alignment, count: toasts.count)
             }
 
-            ZStack {
+            // Collapsed toasts sit on top of each other; expanded they become a list.
+            let layout = isExpanded ? AnyLayout(VStackLayout(spacing: 8)) : AnyLayout(ZStackLayout())
+            let rows = layout {
                 ForEach(Array(ordered.enumerated()), id: \.element.id) { index, toast in
                     toastRow(toast, index: index, total: ordered.count, alignment: alignment, isExpanded: isExpanded)
                 }
             }
-            .modifier(ExpandedLayout(isExpanded: isExpanded, spacing: 8))
+
+            if isExpanded {
+                ScrollView {
+                    rows
+                }
+                .scrollIndicators(.hidden)
+                .frame(maxHeight: 420)
+            } else {
+                rows
+            }
         }
         .padding(alignment == .top ? .top : .bottom, toasts.isEmpty || alignment == .center ? 0 : 8)
         .frame(maxHeight: toasts.isEmpty ? 0 : nil)
-        .animation(manager.theme.animation, value: toasts.map(\.id))
-        .animation(manager.theme.animation, value: isExpanded)
+        .animation(animation, value: toasts.map(\.id))
+        .animation(animation, value: isExpanded)
         .onPreferenceChange(ToastFramePreferenceKey.self) { frames in
             onFramesChange?(frames)
         }
@@ -165,8 +194,16 @@ struct ToastHostView: View {
         .accessibilityHint(L10n.notificationCount(count))
     }
 
+    private func collapseAll() {
+        guard !expanded.isEmpty else { return }
+        expanded.removeAll()
+        manager.setStackExpanded(false)
+        manager.setAutoDismissPaused(false)
+    }
+
     private func expand(_ alignment: ToastAlignment, count: Int) {
         expanded.insert(alignment)
+        manager.setStackExpanded(true)
         manager.setAutoDismissPaused(true)   // nothing vanishes while the list is open
         manager.onEvent?(.stackExpanded(count: count))
         AccessibilityAnnouncer.announce(L10n.notificationCount(count))
@@ -174,17 +211,21 @@ struct ToastHostView: View {
 
     private func collapse(_ alignment: ToastAlignment) {
         expanded.remove(alignment)
-        if expanded.isEmpty { manager.setAutoDismissPaused(false) }
+        guard expanded.isEmpty else { return }
+        manager.setStackExpanded(false)
+        manager.setAutoDismissPaused(false)
     }
 
     private func transition(for alignment: ToastAlignment) -> AnyTransition {
+        guard !reduceMotion else { return .opacity }
         switch alignment {
         case .center:
-            .scale(scale: 0.8).combined(with: .opacity)
+            return .scale(scale: 0.8).combined(with: .opacity)
         case .top, .bottom:
-            .asymmetric(
-                insertion: .move(edge: alignment == .top ? .top : .bottom).combined(with: .opacity),
-                removal: .move(edge: alignment == .top ? .top : .bottom).combined(with: .opacity)
+            let edge: Edge = alignment == .top ? .top : .bottom
+            return .asymmetric(
+                insertion: .move(edge: edge).combined(with: .opacity),
+                removal: .move(edge: edge).combined(with: .opacity)
             )
         }
     }
@@ -236,25 +277,6 @@ struct ToastHostView: View {
 
     private func opacity(for index: Int, total: Int) -> Double {
         (total - 1 - index) >= 3 ? 0 : 1
-    }
-}
-
-/// Collapsed toasts sit on top of each other in a ZStack; expanded ones become a
-/// scrollable list. Swapping the container keeps both layouts in one place.
-private struct ExpandedLayout: ViewModifier {
-    let isExpanded: Bool
-    let spacing: CGFloat
-
-    func body(content: Content) -> some View {
-        if isExpanded {
-            ScrollView {
-                VStack(spacing: spacing) { content }
-            }
-            .scrollIndicators(.hidden)
-            .frame(maxHeight: 420)
-        } else {
-            content
-        }
     }
 }
 

@@ -15,11 +15,11 @@ jobs:
       - name: Test on iOS
         run: >
           xcodebuild test -scheme ToastUI-Package
-          -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+          -destination 'platform=iOS Simulator,OS=latest,name=iPhone 16'
           -skipPackagePluginValidation
       - name: Build for macOS
         run: xcodebuild build -scheme ToastUI-Package -destination 'platform=macOS'
       - name: Build for watchOS
         run: >
           xcodebuild build -scheme ToastUI
-          -destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)'
+          -destination 'generic/platform=watchOS Simulator'

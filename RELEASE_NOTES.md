@@ -5,7 +5,7 @@
 ### Added
 - **Tap a stack to expand it.** Several toasts at once fan out into a scrollable list
   with Collapse and Clear all, instead of having to be waited out one by one. Timers
-  pause while the list is open.
+  pause while the list is open, and tapping anywhere else collapses it.
 - **Pausing**: toasts don't count down while a finger is on one, while a stack is
   expanded, or while the app is backgrounded; `setAutoDismissPaused(_:)` exposes it.
   Durations stretch when VoiceOver is running.
@@ -19,6 +19,7 @@
 - **Rive text runs**: `RiveAnimationSource(textRuns:)` writes values inside the artboard.
 
 ### Fixed
+- Reduce Motion replaces the springs and slides with a plain fade.
 - **Multi-window**: the toast window is created per scene, instead of once for whichever
   scene connected first — iPad and Stage Manager showed toasts in the wrong window.
 

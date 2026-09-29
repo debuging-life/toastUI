@@ -56,7 +56,7 @@ Or in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/debuging-life/ToastUI.git", from: "3.4.0")
+    .package(url: "https://github.com/debuging-life/ToastUI.git", from: "3.5.0")
 ]
 ```
 
@@ -244,8 +244,9 @@ toast.info(title: "Synced 3 runs")
 // tap the stack → all three, newest first
 ```
 
-While the list is open nothing dismisses itself; collapsing starts the timers again.
-It's automatic — there's nothing to turn on.
+While the list is open nothing dismisses itself. Collapse it with the button, or by
+tapping anywhere else on screen, and the timers start again. It's automatic — there's
+nothing to turn on.
 
 ### Stacking, and which toast makes way
 

@@ -39,6 +39,7 @@ final class ToastWindowManager {
                     .merging(frames) { _, new in new }
                     .filter { live.contains($0.key) }
                 window.isBlocking = manager.progressOverlay?.configuration.isBlocking ?? false
+                    || manager.isStackExpanded
             }
         )
         hosting.view.backgroundColor = .clear

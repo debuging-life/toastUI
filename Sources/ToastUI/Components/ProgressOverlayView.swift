@@ -56,14 +56,14 @@ struct ProgressOverlayView: View {
                 if let progress = overlay.progress {
                     DeterminateRing(progress: progress, tint: textColor)
                         .frame(width: 56, height: 56)
-                        .accessibilityLabel(overlay.title ?? "Progress")
-                        .accessibilityValue("\(Int(progress * 100)) percent")
+                        .accessibilityLabel(overlay.title ?? L10n.progress)
+                        .accessibilityValue(L10n.percent(Int(progress * 100)))
                 } else {
                     ProgressView()
                         .progressViewStyle(.circular)
                         .scaleEffect(1.5)
                         .tint(textColor)
-                        .accessibilityLabel(overlay.title ?? "Loading")
+                        .accessibilityLabel(overlay.title ?? L10n.loading)
                 }
 
                 if let title = overlay.title {
@@ -83,7 +83,7 @@ struct ProgressOverlayView: View {
         }
 
         if let onCancel = overlay.onCancel {
-            Button("Cancel", action: onCancel)
+            Button(L10n.cancel, action: onCancel)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(textColor)
                 .padding(.top, 4)
@@ -95,7 +95,7 @@ struct ProgressOverlayView: View {
                     .font(.title2)
                     .foregroundStyle(textColor.opacity(0.7))
             }
-            .accessibilityLabel("Dismiss")
+            .accessibilityLabel(L10n.dismiss)
             .padding(.top, 8)
         }
     }

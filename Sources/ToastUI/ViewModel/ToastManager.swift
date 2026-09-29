@@ -11,6 +11,8 @@ import SwiftUI
 public class ToastManager: ObservableObject {
     @Published public var toasts: [ToastMessage] = []
     @Published public var progressOverlay: ProgressOverlayMessage?
+    /// The dialog awaiting an answer, if any. Driven by `confirm` and `alert`.
+    @Published public var dialog: DialogRequest?
     private var workItems: [UUID: DispatchWorkItem] = [:]
 
     /// Nonisolated so it can be the default for `@Environment(\.toast)`; the
@@ -30,6 +32,16 @@ public class ToastManager: ObservableObject {
 
     /// Override ToastUI's haptics with your own. Tests set this to observe them.
     public var haptics: (@MainActor (ToastType) -> Void)?
+
+    /// Fonts, colours and defaults for everything this manager shows.
+    public var theme: ToastTheme = .default
+
+    /// Every notable thing that happens, for analytics.
+    public var onEvent: (@MainActor (ToastEvent) -> Void)?
+
+    /// While true, nothing dismisses itself: the user is reading, dragging, or the
+    /// stack is expanded. Timers restart when it goes back to false.
+    public private(set) var isAutoDismissPaused = false
 
     public nonisolated init() {}
     
@@ -113,6 +125,8 @@ public class ToastManager: ObservableObject {
             toasts[existing] = toast
             AccessibilityAnnouncer.announce(toast.accessibilityText)
             playHaptics(for: toast)
+            onEvent?(.dismissed(id: replacedID, reason: .replaced))
+            onEvent?(.shown(id: toast.id, title: toast.title, type: toast.type))
             scheduleAutoDismiss(for: toast)
             return
         }
@@ -161,6 +175,7 @@ public class ToastManager: ObservableObject {
         
         AccessibilityAnnouncer.announce(toast.accessibilityText)
         playHaptics(for: toast)
+        onEvent?(.shown(id: toast.id, title: toast.title, type: toast.type))
 
         // Schedule auto-dismiss for non-progress toasts
         scheduleAutoDismiss(for: toast)
@@ -180,9 +195,11 @@ public class ToastManager: ObservableObject {
         
         // A sticky toast waits for the user. `.infinity` (or anything absurd) would
         // trap DispatchTime maths, so it is treated the same way.
-        guard !toast.isSticky, toast.duration.isFinite, toast.duration > 0, toast.duration < 60 * 60 else { return }
+        guard !isAutoDismissPaused,
+              !toast.isSticky,
+              toast.duration.isFinite, toast.duration > 0, toast.duration < 60 * 60 else { return }
         workItems[toast.id] = task
-        DispatchQueue.main.asyncAfter(deadline: .now() + toast.duration, execute: task)
+        DispatchQueue.main.asyncAfter(deadline: .now() + readingDuration(for: toast), execute: task)
     }
     
     // MARK: - Convenience Methods
@@ -330,7 +347,13 @@ public class ToastManager: ObservableObject {
     // MARK: - Dismiss Methods
     
     @MainActor
-    public func dismiss(id: UUID) {
+    public func dismiss(id: UUID, reason: ToastEvent.DismissReason = .programmatic) {
+        onEvent?(.dismissed(id: id, reason: reason))
+        removeToast(id: id)
+    }
+
+    @MainActor
+    private func removeToast(id: UUID) {
         // Cancel the work item for this toast
         workItems[id]?.cancel()
         workItems.removeValue(forKey: id)
@@ -366,6 +389,37 @@ public class ToastManager: ObservableObject {
     public func dismiss() {
         if let last = toasts.last {
             dismiss(id: last.id)
+        }
+    }
+
+    /// VoiceOver users need longer than the time it takes to glance at a toast.
+    private func readingDuration(for toast: ToastMessage) -> TimeInterval {
+        #if os(iOS) || os(tvOS)
+        guard UIAccessibility.isVoiceOverRunning else { return toast.duration }
+        return max(toast.duration * 2, toast.duration + 4)
+        #else
+        return toast.duration
+        #endif
+    }
+
+    // MARK: - Pausing
+
+    /// Stops toasts dismissing themselves — while a finger is on one, while the stack
+    /// is expanded, or while the app is in the background. Resuming gives each visible
+    /// toast a fresh window rather than the remainder of an interrupted one.
+    public func setAutoDismissPaused(_ paused: Bool) {
+        guard paused != isAutoDismissPaused else { return }
+        isAutoDismissPaused = paused
+
+        if paused {
+            workItems.values.forEach { $0.cancel() }
+            workItems.removeAll()
+        } else {
+            for alignment in [ToastAlignment.top, .center, .bottom] {
+                if let top = toasts.last(where: { $0.alignment == alignment }), top.type != .progress {
+                    scheduleAutoDismiss(for: top)
+                }
+            }
         }
     }
 

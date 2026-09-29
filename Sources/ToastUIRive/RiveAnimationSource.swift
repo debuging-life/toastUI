@@ -16,6 +16,9 @@ public struct RiveAnimationSource: Equatable, Sendable {
     public let trigger: String?
     /// Number input (0...100) that a determinate loading animation follows.
     public let progressInput: String?
+    /// Text runs to fill in, by name: `["streakCount": "7"]` writes the number
+    /// inside the artboard instead of putting a label under it.
+    public let textRuns: [String: String]
     /// SF Symbol drawn instead of the animation when Rive is unavailable.
     public let fallbackSymbol: String
     /// Bundle holding the file. Defaults to the app's main bundle.
@@ -26,6 +29,7 @@ public struct RiveAnimationSource: Equatable, Sendable {
                 artboard: String? = nil,
                 trigger: String? = nil,
                 progressInput: String? = nil,
+                textRuns: [String: String] = [:],
                 fallbackSymbol: String = "sparkles",
                 bundle: Bundle = .main) {
         self.asset = asset
@@ -33,6 +37,7 @@ public struct RiveAnimationSource: Equatable, Sendable {
         self.artboard = artboard
         self.trigger = trigger
         self.progressInput = progressInput
+        self.textRuns = textRuns
         self.fallbackSymbol = fallbackSymbol
         self.bundle = bundle
     }
@@ -43,6 +48,7 @@ public struct RiveAnimationSource: Equatable, Sendable {
             && lhs.artboard == rhs.artboard
             && lhs.trigger == rhs.trigger
             && lhs.progressInput == rhs.progressInput
+            && lhs.textRuns == rhs.textRuns
             && lhs.fallbackSymbol == rhs.fallbackSymbol
             && lhs.bundle == rhs.bundle
     }

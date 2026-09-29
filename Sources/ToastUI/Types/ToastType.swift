@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-public enum ToastType {
+public enum ToastType: Hashable, Sendable {
     case success
     case error
     case warning
@@ -29,11 +29,11 @@ public enum ToastType {
     /// Spoken before the title, since colour alone means nothing to VoiceOver.
     var accessibilityPrefix: String? {
         switch self {
-        case .success: return "Success"
-        case .error: return "Error"
-        case .warning: return "Warning"
+        case .success: return L10n.success
+        case .error: return L10n.error
+        case .warning: return L10n.warning
         case .info: return nil
-        case .progress: return "In progress"
+        case .progress: return L10n.inProgress
         case .glass: return nil
         }
     }

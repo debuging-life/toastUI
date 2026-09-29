@@ -1,101 +1,98 @@
 //
-//  File.swift
+//  ToastWindowManager.swift
 //  ToastUI
 //
-//  Created by Pardip Bhatti on 23/12/25.
-//
-
 
 import SwiftUI
 
-#if os(iOS) || os(tvOS)   // watchOS has no UIWindow; those platforms use the overlay host
+#if os(iOS) || os(tvOS)   // watchOS and macOS have no UIWindow; they use the overlay host
 import UIKit
 
+/// Puts the toast host in its own window per scene, so toasts appear above sheets and
+/// covers — and, on iPad or Stage Manager, in the window the user is actually looking
+/// at rather than whichever scene happened to connect first.
 @MainActor
-class ToastWindowManager: ObservableObject {
+final class ToastWindowManager {
     static let shared = ToastWindowManager()
 
-    private var toastWindow: UIWindow?
-    private var isSetup = false
-    @Published var toastFrames: [UUID: CGRect] = [:] // Track toast positions
-    /// While a blocking progress overlay is up, the whole window takes touches.
-    @Published var isBlocking = false
+    private var windows: [String: ToastPassThroughWindow] = [:]
 
     private init() {}
 
-    /// Drops frames for toasts that are gone. Without this their rectangles keep
-    /// swallowing touches, leaving dead zones on screen.
-    func pruneFrames(keeping ids: Set<UUID>) {
-        guard !toastFrames.isEmpty else { return }
-        toastFrames = toastFrames.filter { ids.contains($0.key) }
-    }
+    func setup(with manager: ToastManager, in scene: UIWindowScene) {
+        pruneDisconnectedScenes()
 
-    func setup(with manager: ToastManager) {
-        guard !isSetup else {
-            return
-        }
+        let id = scene.session.persistentIdentifier
+        guard windows[id] == nil else { return }
 
-        guard let windowScene = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first else {
-            return
-        }
-
-
-        let window = ToastPassThroughWindow(windowScene: windowScene)
+        let window = ToastPassThroughWindow(windowScene: scene)
         window.windowLevel = .alert + 1
         window.backgroundColor = .clear
-        window.toastWindowManager = self
 
-        let hostingController = UIHostingController(
-            rootView: ToastHostView(manager: manager) { [weak self] frames in
-                guard let self else { return }
-                // Keep only frames for toasts that are still on screen; stale ones
-                // would swallow taps where a toast used to be.
+        let hosting = UIHostingController(
+            rootView: ToastHostView(manager: manager) { [weak window] frames in
+                guard let window else { return }
+                // Keep only frames for toasts still on screen; stale rectangles would
+                // swallow taps where a toast used to be.
                 let live = Set(manager.toasts.map(\.id))
-                toastFrames = toastFrames.merging(frames) { _, new in new }.filter { live.contains($0.key) }
-                isBlocking = manager.progressOverlay?.configuration.isBlocking ?? false
+                window.toastFrames = window.toastFrames
+                    .merging(frames) { _, new in new }
+                    .filter { live.contains($0.key) }
+                window.isBlocking = manager.progressOverlay?.configuration.isBlocking ?? false
             }
         )
-        hostingController.view.backgroundColor = .clear
-
-        window.rootViewController = hostingController
+        hosting.view.backgroundColor = .clear
+        window.rootViewController = hosting
         window.isHidden = false
 
-        self.toastWindow = window
-        self.isSetup = true
+        windows[id] = window
+    }
 
+    /// Drops windows whose scene has gone away — a closed iPad window, say. Checked
+    /// when a scene appears rather than observed, which keeps it free of the data-race
+    /// problems that come with notifications.
+    private func pruneDisconnectedScenes() {
+        let live = Set(UIApplication.shared.connectedScenes.map(\.session.persistentIdentifier))
+        for (id, window) in windows where !live.contains(id) {
+            window.isHidden = true
+            windows.removeValue(forKey: id)
+        }
     }
 }
 
-// MARK: - Smart PassThrough Window
-
-@MainActor
-class ToastPassThroughWindow: UIWindow {
-    weak var toastWindowManager: ToastWindowManager?
+/// Passes touches through to the app, except where a toast actually is — or anywhere
+/// at all while a blocking loading overlay is up.
+final class ToastPassThroughWindow: UIWindow {
+    var toastFrames: [UUID: CGRect] = [:]
+    var isBlocking = false
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        guard let hitView = super.hitTest(point, with: event) else {
-            return nil
-        }
+        guard let hitView = super.hitTest(point, with: event) else { return nil }
+        if isBlocking { return hitView }
+        let touchIsOnToast = toastFrames.values.contains { $0.contains(point) }
+        return touchIsOnToast ? hitView : nil
+    }
+}
 
-        // Check if touch is within any toast frame
-        // A blocking overlay must swallow everything, not just its own rectangle.
-        if toastWindowManager?.isBlocking == true {
-            return hitView
-        }
+/// Finds the window scene this view belongs to, so the toast window lands in the
+/// right one when the app has several.
+struct ToastSceneReader: UIViewRepresentable {
+    let onScene: (UIWindowScene) -> Void
 
-        let touchIsOnToast = toastWindowManager?.toastFrames.values.contains(where: { frame in
-            frame.contains(point)
-        }) ?? false
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.isUserInteractionEnabled = false
+        DispatchQueue.main.async { report(from: view) }
+        return view
+    }
 
-        if touchIsOnToast {
-            // Touch is on a toast, handle it normally
-            return hitView
-        } else {
-            // Touch is not on any toast, pass through to underlying window
-            return nil
-        }
+    func updateUIView(_ view: UIView, context: Context) {
+        report(from: view)
+    }
+
+    private func report(from view: UIView) {
+        guard let scene = view.window?.windowScene else { return }
+        onScene(scene)
     }
 }
 #endif

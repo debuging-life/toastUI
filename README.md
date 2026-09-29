@@ -42,7 +42,7 @@ Swift 6.2, and:
 
 | Platform | Toasts | Loading overlay | Dialogs | Notes |
 | --- | --- | --- | --- | --- |
-| iOS 17+ | ✅ | ✅ | ✅ | toasts live in their own window, so they appear above sheets |
+| iOS 17+ | ✅ | ✅ | ✅ | one toast window per scene, so iPad and Stage Manager show them in the right place |
 | macOS 14+ | ✅ | ✅ | — | rendered as an overlay on your root view |
 | watchOS 10+ | ✅ | ✅ | — | no clipboard, so the copy button is hidden |
 
@@ -231,6 +231,22 @@ Handy for error codes. Hidden on watchOS, which has no pasteboard:
 toast.error(title: "Sync failed", message: "Code: 500-DB-TIMEOUT", enableCopy: true)
 ```
 
+### Tap the stack to read it
+
+When several toasts pile up, the top one covers the rest. Tap the stack and it fans
+out into a scrollable list with **Collapse** and **Clear all**, so nothing has to be
+waited out:
+
+```swift
+toast.error(title: "Upload failed")
+toast.warning(title: "GPS signal weak")
+toast.info(title: "Synced 3 runs")
+// tap the stack → all three, newest first
+```
+
+While the list is open nothing dismisses itself; collapsing starts the timers again.
+It's automatic — there's nothing to turn on.
+
 ### Stacking, and which toast makes way
 
 Up to three toasts are visible per alignment, with a depth effect. `maximumToasts` caps how many are kept (5 by default); when the stack is full the **least important** one is dropped, so an error is never pushed out by a run of info toasts:
@@ -275,6 +291,56 @@ toast.present(ToastMessage(title: "Synced", type: .info, playsHaptic: false))
 ```
 
 If your app has a Haptics switch in Settings, bind it to `hapticsEnabled`.
+
+### Pausing
+
+Toasts stop counting down while the user is busy with them: a finger on a toast, an
+expanded stack, or the app in the background. You can do it yourself too:
+
+```swift
+toast.setAutoDismissPaused(true)    // e.g. while a tutorial overlay is up
+toast.setAutoDismissPaused(false)
+```
+
+With VoiceOver running, each toast's duration is stretched so it can be read out.
+
+### Theming
+
+Set the look once and keep call sites short:
+
+```swift
+ContentView()
+    .setupToastUI(theme: ToastTheme(
+        toast: .rounded,
+        overlay: .glass,
+        colors: [.success: .lime, .error: .red],
+        defaultAlignment: .top,
+        defaultDuration: 3,
+        animation: .snappy,
+        showsCountdownOnActionToasts: true
+    ))
+```
+
+```swift
+ToastManager.shared.theme.colors[.info] = .teal   // or change it later
+```
+
+An Undo-style toast draws a thin bar that drains as its time runs out, so the window
+to act is visible. Turn it off with `showsCountdownOnActionToasts: false`.
+
+### Analytics
+
+```swift
+ToastManager.shared.onEvent = { event in
+    switch event {
+    case .shown(_, let title, let type): analytics.log("toast_shown", ["title": title, "type": "\(type)"])
+    case .actionTapped(_, let title): analytics.log("toast_action", ["title": title])
+    case .dismissed(_, let reason): analytics.log("toast_dismissed", ["reason": "\(reason)"])
+    case .stackExpanded(let count): analytics.log("toast_stack_expanded", ["count": count])
+    default: break
+    }
+}
+```
 
 ### Accessibility
 
@@ -402,7 +468,26 @@ Cancel cancels the task running your closure, so `Task.isCancelled` and `try Tas
 
 ## Dialogs
 
-iOS only.
+### Ask a question and await the answer
+
+No bindings, no callbacks — the same shape as `withLoading`:
+
+```swift
+if await toast.confirm(title: "Delete activity?",
+                       message: "This can't be undone.",
+                       confirm: "Delete",
+                       destructive: true) {
+    await store.delete(activity)
+}
+
+await toast.alert(title: "Sync finished", message: "12 runs are up to date.")
+```
+
+Tapping outside answers false. `toast.dismissDialog()` closes it from code.
+
+### The view modifier
+
+For dialogs with your own content. iOS only.
 
 ### A custom dialog
 
@@ -537,6 +622,21 @@ toast.showRiveCelebration(
     router.push(.streakDetails)     // optional, runs after the user taps
 }
 ```
+
+### Text inside the animation
+
+Rive text runs mean a celebration can show the number inside the artwork instead of
+as a label under it:
+
+```swift
+let streak = RiveAnimationSource(
+    asset: "celebrate_streak",
+    textRuns: ["streakCount": "7", "unit": "days"],
+    fallbackSymbol: "flame.fill"
+)
+```
+
+A name that doesn't exist in the file logs a line and is skipped.
 
 ### Preloading
 

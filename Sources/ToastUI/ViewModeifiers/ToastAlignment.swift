@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-public enum ToastAlignment {
+public enum ToastAlignment: Hashable, Sendable {
     case top
     case center
     case bottom

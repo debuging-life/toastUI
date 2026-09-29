@@ -49,7 +49,10 @@ public struct RiveAnimationView: View {
         .task(id: source) {
             guard !reduceMotion else { return }
             model = RiveAnimationCache.shared.viewModel(for: source)
-            if let model { apply(progress, to: model) }
+            if let model {
+                applyTextRuns(to: model)
+                apply(progress, to: model)
+            }
         }
         .onChange(of: progress) { _, newValue in
             guard let model else { return }
@@ -63,6 +66,18 @@ public struct RiveAnimationView: View {
             model.triggerInput(trigger)
         } else {
             model.play()
+        }
+    }
+
+    /// Writes values into the artboard's text runs, so a celebration can show
+    /// "7-day streak" inside the animation rather than as a label beneath it.
+    private func applyTextRuns(to model: RiveViewModel) {
+        for (name, value) in source.textRuns {
+            do {
+                try model.setTextRunValue(name, textValue: value)
+            } catch {
+                print("[ToastUIRive] '\(source.asset).riv' has no text run named '\(name)'. \(error)")
+            }
         }
     }
 

@@ -7,6 +7,9 @@ import SwiftUI
 
 struct ToastView: View {
     let toast: ToastMessage
+    var theme: ToastTheme = .default
+    /// Draws the countdown only while the toast is really counting down.
+    var isCountingDown = true
     let onDismiss: () -> Void
 
     @State private var showCopiedFeedback = false
@@ -14,7 +17,16 @@ struct ToastView: View {
 
     private var surface: ToastSurface {
         if toast.type == .glass { return .glass }
-        return .solid(toast.backgroundColor ?? toast.type.color)
+        return .solid(toast.backgroundColor ?? theme.color(for: toast.type))
+    }
+
+    /// An Undo toast with a visible deadline: the bar drains as the time runs out.
+    private var showsCountdown: Bool {
+        theme.showsCountdownOnActionToasts
+            && toast.action != nil
+            && !toast.isSticky
+            && isCountingDown
+            && toast.duration.isFinite
     }
 
     var body: some View {
@@ -53,6 +65,13 @@ struct ToastView: View {
         }
         .padding(.horizontal, toast.configuration.horizontalPadding)
         .padding(.vertical, toast.configuration.verticalPadding)
+        .overlay(alignment: .bottom) {
+            if showsCountdown {
+                CountdownBar(duration: toast.duration, tint: surface.foreground)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 6)
+            }
+        }
         .toastSurface(
             surface,
             cornerRadius: toast.configuration.cornerRadius,
@@ -73,7 +92,7 @@ struct ToastView: View {
         .gesture(dismissDrag)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(toast.accessibilityText)
-        .accessibilityAction(named: "Dismiss", onDismiss)
+        .accessibilityAction(named: Text(L10n.dismiss), onDismiss)
     }
 
     /// Flick a toast away: up for the top stack, down for the bottom one.
@@ -141,7 +160,7 @@ struct ToastView: View {
                     .foregroundStyle(surface.foreground.opacity(0.7))
                     .animation(.spring(duration: 0.3), value: showCopiedFeedback)
                 }
-                .accessibilityLabel(showCopiedFeedback ? "Copied" : "Copy message")
+                .accessibilityLabel(showCopiedFeedback ? L10n.copied : L10n.copyMessage)
             }
 
             if toast.showCloseButton {
@@ -150,7 +169,7 @@ struct ToastView: View {
                         .font(.caption)
                         .foregroundStyle(surface.foreground.opacity(0.7))
                 }
-                .accessibilityLabel("Dismiss")
+                .accessibilityLabel(L10n.dismiss)
             }
         }
     }
@@ -180,5 +199,26 @@ struct ToastView: View {
             try? await Task.sleep(for: .seconds(1.5))
             withAnimation(.spring(duration: 0.3)) { showCopiedFeedback = false }
         }
+    }
+}
+
+/// A hairline that drains over the toast's lifetime, so an Undo window is visible.
+private struct CountdownBar: View {
+    let duration: TimeInterval
+    let tint: Color
+
+    @State private var remaining: CGFloat = 1
+
+    var body: some View {
+        GeometryReader { geometry in
+            Capsule()
+                .fill(tint.opacity(0.6))
+                .frame(width: geometry.size.width * remaining, height: 2)
+        }
+        .frame(height: 2)
+        .onAppear {
+            withAnimation(.linear(duration: duration)) { remaining = 0 }
+        }
+        .accessibilityHidden(true)
     }
 }

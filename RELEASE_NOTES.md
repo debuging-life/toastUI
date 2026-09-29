@@ -1,5 +1,27 @@
 # ToastUI Release Notes
 
+## 3.5.0
+
+### Added
+- **Tap a stack to expand it.** Several toasts at once fan out into a scrollable list
+  with Collapse and Clear all, instead of having to be waited out one by one. Timers
+  pause while the list is open.
+- **Pausing**: toasts don't count down while a finger is on one, while a stack is
+  expanded, or while the app is backgrounded; `setAutoDismissPaused(_:)` exposes it.
+  Durations stretch when VoiceOver is running.
+- **`ToastTheme`**: shape, colours per type, default alignment and duration, animation,
+  set once through `setupToastUI(theme:)`.
+- **Countdown on Undo-style toasts**: a thin bar drains so the window to act is visible.
+- **Async dialogs**: `await toast.confirm(…) -> Bool` and `await toast.alert(…)`.
+- **`onEvent`** analytics hook: shown, dismissed (with reason), action tapped, stack
+  expanded, loading shown/cancelled/dismissed.
+- **Localisation**: every user-facing string moved into the package's own string catalog.
+- **Rive text runs**: `RiveAnimationSource(textRuns:)` writes values inside the artboard.
+
+### Fixed
+- **Multi-window**: the toast window is created per scene, instead of once for whichever
+  scene connected first — iPad and Stage Manager showed toasts in the wrong window.
+
 ## 3.4.0
 
 ### Added

@@ -56,7 +56,7 @@ Or in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/debuging-life/ToastUI.git", from: "3.5.0")
+    .package(url: "https://github.com/debuging-life/ToastUI.git", from: "5.0.0")
 ]
 ```
 
@@ -756,7 +756,7 @@ xcodebuild test -scheme ToastUI-Package -destination 'platform=iOS Simulator,nam
 
 ## Migrating
 
-### To 3.4.0
+### To 5.0.0
 
 - **Platforms:** iOS 17 / macOS 14 / watchOS 10 (was iOS 16 / macOS 13.1).
 - **macOS and watchOS now actually show toasts.** `setupToastUI()` previously did nothing outside iOS.

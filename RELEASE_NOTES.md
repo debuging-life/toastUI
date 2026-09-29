@@ -1,76 +1,93 @@
 # ToastUI Release Notes
 
-## 3.5.0
+## 5.0.0
+
+Toasts you can read, loading you can trust, and optional Rive animations.
+
+### Breaking changes
+- **Minimum platforms are now iOS 17 / macOS 14 / watchOS 10** (were iOS 16 / macOS 13.1).
+- **Haptics are opt-in.** Set `ToastManager.shared.hapticsEnabled = true` if you want them.
+- **The examples moved** to a separate `ToastUIExamples` product. Add it to your demo
+  target if you used `ToastUIExamplesView()`.
+- **`ToastMessage.updateTitle(_:)` is internal** (it was public by accident).
 
 ### Added
-- **Tap a stack to expand it.** Several toasts at once fan out into a scrollable list
-  with Collapse and Clear all, instead of having to be waited out one by one. Timers
-  pause while the list is open, and tapping anywhere else collapses it.
-- **Pausing**: toasts don't count down while a finger is on one, while a stack is
-  expanded, or while the app is backgrounded; `setAutoDismissPaused(_:)` exposes it.
-  Durations stretch when VoiceOver is running.
-- **`ToastTheme`**: shape, colours per type, default alignment and duration, animation,
-  set once through `setupToastUI(theme:)`.
-- **Countdown on Undo-style toasts**: a thin bar drains so the window to act is visible.
-- **Async dialogs**: `await toast.confirm(…) -> Bool` and `await toast.alert(…)`.
-- **`onEvent`** analytics hook: shown, dismissed (with reason), action tapped, stack
-  expanded, loading shown/cancelled/dismissed.
-- **Localisation**: every user-facing string moved into the package's own string catalog.
-- **Rive text runs**: `RiveAnimationSource(textRuns:)` writes values inside the artboard.
 
-### Fixed
-- Reduce Motion replaces the springs and slides with a plain fade.
-- **Multi-window**: the toast window is created per scene, instead of once for whichever
-  scene connected first — iPad and Stage Manager showed toasts in the wrong window.
+**Reading a pile of toasts**
+- Tap a stack and it fans out into a scrollable list with **Collapse** and **Clear all**,
+  instead of waiting each one out. Timers pause while it's open; tapping anywhere else
+  collapses it.
+- Toasts stop counting down while a finger is on one, while a stack is expanded, and
+  while the app is backgrounded. `setAutoDismissPaused(_:)` exposes the same control.
+- Durations stretch automatically when VoiceOver is running.
 
-## 3.4.0
+**Toasts that do something**
+- `ToastAction` puts an Undo / Retry / View button inside a toast, with a thin bar that
+  drains so the window to act is visible.
+- `onTap` handles taps on the toast body — open the run that just synced.
+- Swipe to dismiss, in the direction the toast came from.
+- `groupID` makes repeat events replace each other instead of stacking.
+- `isSticky` keeps a toast until something dismisses it.
+- `maximumToasts` caps the stack, and when it is full the least important toast makes
+  way, so an error is never pushed off screen by a run of info toasts.
 
-### Added
-- **Toast actions**: a button inside the toast (`ToastAction`) for Undo / Retry / View,
-  and `onTap` for the whole toast.
-- **Swipe to dismiss**, in the direction the toast came from.
-- **Grouping** (`groupID`): repeat events replace the toast on screen instead of stacking.
-- **Sticky toasts** (`isSticky`) that wait for the user.
-- **Haptics**, opt-in: `ToastManager.hapticsEnabled` is off until the app turns it on,
-  `ToastMessage.playsHaptic` overrides it per toast, and `haptics` swaps in your own.
-- **`withLoading`**: runs async work behind the loading overlay, forwards progress, and
-  always removes the overlay — on success, on error, and on cancellation.
-- **watchOS 10** support, and `RiveAnimationCache.preload(_:)` so the first celebration
-  doesn't hitch.
-- GitHub Actions CI running the tests on iOS and building for macOS and watchOS.
+**Loading**
+- `withLoading` runs async work behind the overlay and always removes it — on success,
+  on a thrown error, and on cancellation.
+- Determinate progress: `showProgressOverlay(progress:)` draws a percentage ring, and
+  `updateProgressOverlay(…)` updates the panel in place without re-animating it.
+- `onCancel` adds a Cancel button that cancels the task.
 
-### Changed
-- When the stack is full, the least important toast is evicted rather than the oldest.
-- `ToastManager.present(_:)` is public, for toasts built from a `ToastMessage`.
+**Dialogs**
+- `await toast.confirm(…) -> Bool` and `await toast.alert(…)`: no bindings, no callbacks.
 
-## 3.3.0
+**Rive (new `ToastUIRive` product, optional)**
+- Animated toast icons (`presentRive`), loading animations driven by real progress
+  through a state-machine input (`showRiveProgressOverlay`), and full-screen
+  celebrations (`showRiveCelebration`).
+- Text runs write values inside the artboard, so "7-day streak" can live in the
+  animation rather than a label beneath it.
+- `RiveAnimationCache.preload(_:)` avoids a first-play hitch; a missing or renamed
+  `.riv` falls back to an SF Symbol instead of crashing; Reduce Motion skips Rive; and
+  animations stop on disappear so the display link doesn't keep running.
+- The core `ToastUI` product still has **zero dependencies**.
 
-### Added
-- **`ToastUIRive` product**: Rive-powered toast icons (`presentRive`), loading overlays
-  (`showRiveProgressOverlay`) and celebrations (`showRiveCelebration`). Optional: the core
-  `ToastUI` product stays dependency-free.
-- **Determinate loading**: `showProgressOverlay(progress:)` draws a percentage ring, and
-  `updateProgressOverlay(progress:title:message:)` updates the panel in place without
-  re-animating it.
-- **Cancellable loading**: `onCancel` adds a Cancel button for uploads and long syncs.
-- `maximumToasts` caps the stack instead of letting it grow without limit.
+**Theming, analytics, accessibility**
+- `ToastTheme` sets shape, per-type colours, default alignment and duration, and the
+  animation, once through `setupToastUI(theme:)`.
+- `onEvent` reports shown, dismissed (with reason), action tapped, stack expanded, and
+  the loading events.
+- Toasts are announced to VoiceOver, the type is spoken so colour is not the only
+  signal, buttons are labelled, and the loading ring reports its percentage.
+- Every user-facing string moved into the package's own string catalog.
 
 ### Fixed
 - **Dead touch zones**: toast frames were never removed from the pass-through window's
   hit-test table, so the area where a toast used to be kept swallowing taps.
-- **Blocking overlays didn't block**: the toast window passed touches through even while a
-  blocking progress overlay was up.
-- **Data race risk**: `ToastManager` was `@unchecked Sendable` with mutable published state;
-  it is now `@MainActor`.
+- **Blocking overlays didn't block**: touches passed straight through a "blocking"
+  loading overlay.
+- **macOS and watchOS showed nothing**: `setupToastUI()` only did anything on iOS. They
+  now render through the same host as an overlay.
+- **Multi-window**: the toast window is created per scene, instead of once for whichever
+  scene connected first — iPad and Stage Manager put toasts in the wrong window.
+- **Expanded stacks kept their toasts overlapped** instead of listing them, and Collapse
+  and Clear all were not tappable in the iOS window.
+- **Data race risk**: `ToastManager` was `@unchecked Sendable` with mutable published
+  state; it is now `@MainActor`.
 - A `duration` of `.infinity` no longer reaches `DispatchTime` maths.
+- Reduce Motion replaces springs and slides with a plain fade.
 
 ### Changed
-- Minimum platforms are now **iOS 17 / macOS 14**.
-- **macOS and watchOS now actually show toasts**: they render as an overlay, since only
-  iOS gets the pass-through window.
-- Toasts and the loading panel are drawn by one body each (`ToastSurface`) instead of
-  three near-identical ones, and `.glass` uses real Liquid Glass on iOS 26 / macOS 26.
-- The examples moved to their own `ToastUIExamples` product.
-- `ToastMessage.updateTitle(_:)` is internal (it was public by accident).
+- `.glass` uses real Liquid Glass on iOS 26 / macOS 26 / watchOS 26, rather than a
+  material standing in for it.
+- Toasts and the loading panel are each drawn by one body (`ToastSurface`) instead of
+  three near-identical ones.
+- `ToastManager.present(_:)` is public, for toasts built from a `ToastMessage`.
+- `Package.resolved` is no longer tracked; a library resolves nothing for its consumers.
+
+### Testing
+- 29 tests covering presentation, grouping, priority eviction, sticky behaviour,
+  pausing, haptics, the loading helper, dialog continuations and the event stream.
+- GitHub Actions CI runs them on iOS and builds for macOS and watchOS.
 
 **Made with ❤️ for the SwiftUI community**

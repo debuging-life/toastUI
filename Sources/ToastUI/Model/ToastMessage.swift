@@ -45,6 +45,11 @@ public struct ToastMessage: Identifiable, Equatable {
         self.enableCopy = enableCopy
     }
     
+    /// What VoiceOver reads when the toast appears.
+    public var accessibilityText: String {
+        [type.accessibilityPrefix, title, message].compactMap { $0 }.joined(separator: ". ")
+    }
+
     public var copyableText: String {
         if let message = message {
             return "\(title)\n\(message)"

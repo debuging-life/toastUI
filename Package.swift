@@ -23,6 +23,11 @@ let package = Package(
             name: "ToastUIRive",
             targets: ["ToastUIRive"]
         ),
+        /// The showcase screens. Opt in while building a demo; apps don't ship it.
+        .library(
+            name: "ToastUIExamples",
+            targets: ["ToastUIExamples"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/rive-app/rive-ios", from: "6.0.0")
@@ -40,6 +45,10 @@ let package = Package(
                 "ToastUI",
                 .product(name: "RiveRuntime", package: "rive-ios")
             ]
+        ),
+        .target(
+            name: "ToastUIExamples",
+            dependencies: ["ToastUI", "ToastUIRive"]
         ),
         .testTarget(
             name: "ToastUITests",

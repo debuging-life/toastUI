@@ -122,6 +122,8 @@ public class ToastManager: ObservableObject {
             workItems.removeValue(forKey: existingToast.id)
         }
         
+        AccessibilityAnnouncer.announce(toast.accessibilityText)
+
         // Schedule auto-dismiss for non-progress toasts
         scheduleAutoDismiss(for: toast)
     }
@@ -360,6 +362,7 @@ public class ToastManager: ObservableObject {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             progressOverlay = overlay
         }
+        AccessibilityAnnouncer.announce([title, message].compactMap { $0 }.joined(separator: ". "))
     }
 
     /// Show progress overlay with custom view

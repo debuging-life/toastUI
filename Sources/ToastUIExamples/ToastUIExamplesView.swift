@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ToastUI
 
 /// Comprehensive examples showcase for ToastUI
 /// Demonstrates Toast Notifications, Dialogs, and Progress Overlays

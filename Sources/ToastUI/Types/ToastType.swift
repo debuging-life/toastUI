@@ -26,6 +26,18 @@ public enum ToastType {
         }
     }
 
+    /// Spoken before the title, since colour alone means nothing to VoiceOver.
+    var accessibilityPrefix: String? {
+        switch self {
+        case .success: return "Success"
+        case .error: return "Error"
+        case .warning: return "Warning"
+        case .info: return nil
+        case .progress: return "In progress"
+        case .glass: return nil
+        }
+    }
+
     var color: Color {
         switch self {
         case .success: return .green

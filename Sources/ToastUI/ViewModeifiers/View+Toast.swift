@@ -1,29 +1,34 @@
 //
-//  File.swift
+//  View+Toast.swift
 //  ToastUI
-//
-//  Created by Pardip Bhatti on 21/12/25.
 //
 
 import SwiftUI
 
 public extension View {
-    /// Enables toast notifications for this view hierarchy
-    /// Apply this to your root view (typically in your App struct)
-    func setupToastUI() -> some View {
-        modifier(ToastSetupModifier())
+    /// Enables toast notifications for this view hierarchy.
+    /// Apply this once, to your root view.
+    ///
+    /// On iOS the toasts live in their own pass-through window, so they appear above
+    /// sheets and covers. Elsewhere they are an overlay on this view.
+    func setupToastUI(manager: ToastManager = .shared) -> some View {
+        modifier(ToastSetupModifier(manager: manager))
     }
 }
 
 private struct ToastSetupModifier: ViewModifier {
+    @ObservedObject var manager: ToastManager
+
     func body(content: Content) -> some View {
-        content
-            .task {
-                #if canImport(UIKit)
-                // Small delay to ensure window scene is ready
-                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-                ToastWindowManager.shared.setup(with: ToastManager.shared)
-                #endif
-            }
+        #if os(iOS)
+        content.task {
+            ToastWindowManager.shared.setup(with: manager)
+        }
+        #else
+        content.overlay {
+            ToastHostView(manager: manager)
+                .allowsHitTesting(manager.progressOverlay != nil || !manager.toasts.isEmpty)
+        }
+        #endif
     }
 }

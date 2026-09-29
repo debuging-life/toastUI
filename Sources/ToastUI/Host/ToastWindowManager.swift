@@ -48,7 +48,14 @@ class ToastWindowManager: ObservableObject {
         window.toastWindowManager = self
 
         let hostingController = UIHostingController(
-            rootView: ToastWindowRootView(manager: manager, windowManager: self)
+            rootView: ToastHostView(manager: manager) { [weak self] frames in
+                guard let self else { return }
+                // Keep only frames for toasts that are still on screen; stale ones
+                // would swallow taps where a toast used to be.
+                let live = Set(manager.toasts.map(\.id))
+                toastFrames = toastFrames.merging(frames) { _, new in new }.filter { live.contains($0.key) }
+                isBlocking = manager.progressOverlay?.configuration.isBlocking ?? false
+            }
         )
         hostingController.view.backgroundColor = .clear
 

@@ -1,107 +1,156 @@
 # ToastUI 🎉
 
-A powerful notification system for SwiftUI with toasts, progress overlays, and dialogs - built with modern Swift concurrency and environment-based API.
+Toasts, loading overlays and dialogs for SwiftUI — with optional Rive animations.
 
 ![Platform](https://img.shields.io/badge/platform-iOS%2017%2B%20%7C%20macOS%2014%2B%20%7C%20watchOS%2010%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-6.2+-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-## Features ✨
+```swift
+@Environment(\.toast) private var toast
 
-### 🍞 Toast Notifications
-- **Simple API** - Just `@Environment(\.toast) var toast`
-- **6 Toast Types** - Success, Error, Warning, Info, Progress, Glass Effect
-- **Glass Effect** - Beautiful translucent glass toast (iOS 26+, auto-fallback to regular material)
-- **3 Alignments** - Top, Center, Bottom
-- **Custom Icons** - Use any SwiftUI View as icon
-- **Custom Colors** - Brand your toasts
-- **Copy to Clipboard** - One-tap copy for errors
-- **Multiple Toasts** - Stack with depth effect
-- **Smart Auto-dismiss** - Proper timer management
-- **Actions** - an Undo / Retry / View button inside the toast, or a tap handler on the whole thing
-- **Swipe to dismiss** - flick a toast away, in the direction it came from
-- **Grouping** - repeat events replace each other instead of piling up
-- **Sticky** - a toast that waits for the user ("You're offline")
-- **Haptics** - opt-in success/error feedback, per-toast override, or your own
-- **VoiceOver** - toasts are announced, buttons are labelled
+toast.success(title: "Run saved")
+toast.error(title: "Upload failed", message: "Check your connection.")
 
-### 🎞️ Rive Animations (optional `ToastUIRive` product)
-- **Animated icons** - any `.riv` file as a toast icon
-- **Animated loading** - a Rive loading animation, driven by real progress through a state-machine input
-- **Celebrations** - full-screen moments for streaks, personal bests and finished challenges
-- **Safe by default** - a missing file or Reduce Motion falls back to an SF Symbol instead of crashing
-- **Opt-in** - the core `ToastUI` product still has zero dependencies
+let run = try await toast.withLoading("Uploading run", determinate: true) { report in
+    try await api.upload(run) { report($0) }
+}
+```
 
-### 🧵 Async loading
-- **`withLoading`** - runs your work behind the overlay and always takes it away again, on success, error or cancellation
-- **Progress reporting** - forward 0...1 straight from an upload
-- **Cancellable** - a Cancel button that cancels the task
+---
 
-### ⏳ Progress Overlay
-- **Independent System** - Separate from toasts for full-screen progress indication
-- **Highly Customizable** - Control size, colors, position, and style
-- **Multiple Positions** - Top, Center, Bottom, or Custom coordinates
-- **Glass Effect Support** - Beautiful translucent glass overlay (iOS 26+)
-- **Custom Views** - Pass your own SwiftUI views for complete control
-- **Blocking/Non-blocking** - Choose whether to block user interaction
-- **Clear Background** - Option for transparent background showing only content
-- **Dismissible** - Optional close button for user dismissal
-- **Determinate progress** - pass `progress: 0...1` for a percentage ring, and update it in place
-- **Cancellable** - pass `onCancel` for uploads and long syncs
+## Contents
 
-### 💬 Dialog System
-- **Custom Dialogs** - Build with SwiftUI views
-- **Pre-built Components** - Alert, Confirmation
-- **Smooth Animations** - Bouncy slide-up
-- **Backdrop Control** - Tap to dismiss or require action
-
-### 🚀 General
-- **SwiftUI Native** - Pure SwiftUI
-- **iOS 16+ & macOS 13.1+** - Cross-platform
-- **Swift 6 Ready** - Modern concurrency
-- **Environment-based** - Seamless integration
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Setup](#setup)
+- [Toasts](#toasts)
+- [Loading overlays](#loading-overlays)
+- [Async loading](#async-loading)
+- [Dialogs](#dialogs)
+- [Rive animations](#rive-animations)
+- [Examples app](#examples-app)
+- [Testing](#testing)
+- [API reference](#api-reference)
+- [Migrating](#migrating)
 
 ---
 
 ## Requirements
 
-- iOS 16.0+ / macOS 13.1+
-- Swift 6.2+
-- Xcode 16.2+
+Swift 6.2, and:
 
----
+| Platform | Toasts | Loading overlay | Dialogs | Notes |
+| --- | --- | --- | --- | --- |
+| iOS 17+ | ✅ | ✅ | ✅ | toasts live in their own window, so they appear above sheets |
+| macOS 14+ | ✅ | ✅ | — | rendered as an overlay on your root view |
+| watchOS 10+ | ✅ | ✅ | — | no clipboard, so the copy button is hidden |
+
+Liquid Glass (`.glass`) uses the real `glassEffect` on iOS 26 / macOS 26 / watchOS 26, and a material below that.
 
 ## Installation
 
-### Swift Package Manager
-
-1. In Xcode: **File** → **Add Package Dependencies**
-2. Enter: `https://github.com/debuging-life/ToastUI.git`
-3. Select **Up to Next Major Version** with `3.2.0`
+In Xcode: **File ▸ Add Package Dependencies**, then `https://github.com/debuging-life/ToastUI.git`.
 
 Or in `Package.swift`:
+
 ```swift
 dependencies: [
-    .package(url: "https://github.com/debuging-life/ToastUI.git", from: "3.3.0")
+    .package(url: "https://github.com/debuging-life/ToastUI.git", from: "3.4.0")
 ]
 ```
 
-The package ships **two products**:
+The package ships three products — pick what you need:
 
 | Product | Contents | Dependencies |
 | --- | --- | --- |
-| `ToastUI` | toasts, progress overlays, dialogs | none |
+| `ToastUI` | toasts, loading overlays, dialogs | none |
 | `ToastUIRive` | Rive icons, loading animations, celebrations | [rive-ios](https://github.com/rive-app/rive-ios) |
+| `ToastUIExamples` | the showcase screens | ToastUI + ToastUIRive |
 
-Add `ToastUIRive` only if you want Rive; apps that don't never link the runtime.
+Apps that don't add `ToastUIRive` never link the Rive runtime.
 
+## Setup
 
+Once, on your root view:
+
+```swift
+import SwiftUI
+import ToastUI
+
+@main
+struct MyApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .setupToastUI()
+        }
+    }
+}
+```
+
+Then anywhere in the hierarchy:
+
+```swift
+struct ContentView: View {
+    @Environment(\.toast) private var toast
+
+    var body: some View {
+        Button("Save") { toast.success(title: "Saved") }
+    }
+}
+```
+
+Outside a view — in a view model or a service — use the shared manager:
+
+```swift
+ToastManager.shared.error(title: "Sync failed")
+```
 
 ---
 
-## Actions, taps and sticky toasts
+## Toasts
 
-Build a `ToastMessage` when you want more than a title, and present it:
+### The types
+
+```swift
+toast.success(title: "Run saved")
+toast.error(title: "Upload failed")
+toast.warning(title: "GPS signal weak")
+toast.info(title: "New challenge available")
+toast.glass(title: "Liquid Glass toast")     // translucent
+toast.progress(title: "Syncing…")            // spinner; call again to update the text
+```
+
+### With a message
+
+```swift
+toast.error(
+    title: "Couldn't sign you in",
+    message: "Check your email and password and try again."
+)
+```
+
+### Alignment
+
+```swift
+toast.success(title: "Saved", alignment: .top)       // default
+toast.info(title: "Centred", alignment: .center)
+toast.warning(title: "Bottom", alignment: .bottom)
+```
+
+Each alignment keeps its own stack.
+
+### Duration, and toasts that wait
+
+```swift
+toast.info(title: "Quick note", duration: 1.5)
+
+// Sticky: stays until something dismisses it
+toast.present(ToastMessage(title: "You're offline", type: .warning, isSticky: true))
+```
+
+### An action button
 
 ```swift
 toast.present(
@@ -112,94 +161,141 @@ toast.present(
     )
 )
 
-// Tapping the toast opens the run that just synced
-toast.present(
-    ToastMessage(title: "Run synced", type: .success, onTap: { router.push(.activity(id: id)) })
-)
-
-// Repeat events replace each other instead of stacking
-toast.present(ToastMessage(title: "GPS signal lost", type: .warning, groupID: "gps"))
-
-// Stays until you dismiss it by id
-toast.present(ToastMessage(title: "You're offline", type: .warning, isSticky: true))
+// Keep the toast open after the tap
+ToastAction(title: "Retry", dismissesToast: false) { sync.retry() }
 ```
 
-Toasts can be flicked away — up from the top stack, down from the bottom. When the
-stack is full the least important toast makes way, so an error is never pushed off
-screen by a run of info messages.
-
-## Async loading 🧵
+### Tapping the toast itself
 
 ```swift
-let run = try await toast.withLoading("Uploading run", determinate: true, cancellable: true,
-                                      errorTitle: "Upload failed") { report in
-    try await api.upload(run) { report($0) }   // 0...1
+toast.present(
+    ToastMessage(
+        title: "Run synced",
+        type: .success,
+        onTap: { router.push(.activity(id: run.id)) }
+    )
+)
+```
+
+### Swipe to dismiss
+
+Built in: flick a top toast up, a bottom toast down. Nothing to configure.
+
+### Grouping repeat events
+
+Without a group, ten "GPS signal lost" events make ten toasts. With one, they replace each other:
+
+```swift
+toast.present(ToastMessage(title: "GPS signal lost", type: .warning, groupID: "gps"))
+toast.present(ToastMessage(title: "GPS signal weak", type: .warning, groupID: "gps"))
+// one toast on screen, showing the latest
+```
+
+### A custom icon
+
+Any SwiftUI view:
+
+```swift
+toast.present(title: "Achievement unlocked", type: .success) {
+    Image("medal")
+        .resizable()
+        .scaledToFit()
 }
 ```
 
-The overlay appears, follows the progress, and is taken away on success, on a thrown
-error, and on cancellation — the usual way a loading overlay gets stuck on screen.
-
-## Haptics
-
-**Off by default.** Turn them on once, wherever you configure the app:
+### Colours and shape
 
 ```swift
-ToastManager.shared.hapticsEnabled = true       // success, error and warning
+toast.success(title: "Branded", backgroundColor: Color(red: 0.65, green: 0.83, blue: 0.17))
+
+toast.info(title: "Rounded", configuration: .rounded)   // .default, .compact, .rounded, .minimal
+
+toast.info(
+    title: "Custom",
+    configuration: ToastConfiguration(
+        cornerRadius: 20,
+        shadowRadius: 12,
+        shadowColor: .black.opacity(0.25),
+        shadowY: 6,
+        horizontalPadding: 16,
+        verticalPadding: 14
+    )
+)
+```
+
+### Copy to clipboard
+
+Handy for error codes. Hidden on watchOS, which has no pasteboard:
+
+```swift
+toast.error(title: "Sync failed", message: "Code: 500-DB-TIMEOUT", enableCopy: true)
+```
+
+### Stacking, and which toast makes way
+
+Up to three toasts are visible per alignment, with a depth effect. `maximumToasts` caps how many are kept (5 by default); when the stack is full the **least important** one is dropped, so an error is never pushed out by a run of info toasts:
+
+```swift
+ToastManager.shared.maximumToasts = 3
+```
+
+Priority: `error` > `warning` > `success` / `progress` > `info` / `glass`.
+
+### Dismissing
+
+```swift
+toast.dismiss()                 // the topmost toast
+toast.dismiss(id: someToastID)  // a specific one
+toast.dismissAll()
+```
+
+Keep the id when you show something sticky:
+
+```swift
+let offline = ToastMessage(title: "You're offline", type: .warning, isSticky: true)
+toast.present(offline)
+// later
+toast.dismiss(id: offline.id)
+```
+
+### Haptics (opt-in)
+
+Off by default. Turn them on once:
+
+```swift
+ToastManager.shared.hapticsEnabled = true                        // success, error, warning
 ToastManager.shared.haptics = { type in myHaptics.play(type) }   // or use your own
 ```
 
-A single toast can override the app-wide setting either way — handy when haptics are
-off generally but a personal best deserves one:
+A single toast can override the app-wide setting either way:
 
 ```swift
 toast.present(ToastMessage(title: "New personal best", type: .success, playsHaptic: true))
 toast.present(ToastMessage(title: "Synced", type: .info, playsHaptic: false))
 ```
 
-If your app has a "Haptics" switch in Settings, bind it straight to `hapticsEnabled`.
+If your app has a Haptics switch in Settings, bind it to `hapticsEnabled`.
+
+### Accessibility
+
+Handled for you: each toast is announced to VoiceOver as it appears, the type is spoken ("Error…") so colour isn't the only signal, the close and copy buttons are labelled, a Dismiss action is exposed, and the loading ring reports its percentage.
 
 ---
 
-## Rive Animations 🎞️
+## Loading overlays
 
-Add the `ToastUIRive` product, drop your `.riv` files in the app bundle, and describe
-one with `RiveAnimationSource`:
+### Indeterminate
 
 ```swift
-import ToastUIRive
-
-let savedTick = RiveAnimationSource(
-    asset: "toast_success",            // toast_success.riv in your bundle
-    stateMachine: "State Machine 1",
-    fallbackSymbol: "checkmark.circle.fill"
-)
+toast.showProgressOverlay(title: "Syncing your runs")
+// ... work ...
+toast.dismissProgressOverlay()
 ```
 
-### Animated toast icon
+### Determinate, updated as work proceeds
 
 ```swift
-@Environment(\.toast) var toast
-
-toast.presentRive(title: "Run saved", animation: savedTick, type: .success)
-```
-
-### Animated loading, driven by real progress
-
-Give the source a `progressInput` — a number input (0–100) in your state machine — and
-the animation follows the upload:
-
-```swift
-let uploading = RiveAnimationSource(
-    asset: "loading_ring",
-    progressInput: "progress",
-    fallbackSymbol: "arrow.up.circle"
-)
-
-toast.showRiveProgressOverlay(animation: uploading,
-                              title: "Uploading run",
-                              progress: 0,
-                              onCancel: { upload.cancel() })
+toast.showProgressOverlay(title: "Uploading run", progress: 0)
 
 for await fraction in upload.progress {
     toast.updateProgressOverlay(progress: fraction, title: "Uploading \(Int(fraction * 100))%")
@@ -208,479 +304,158 @@ for await fraction in upload.progress {
 toast.dismissProgressOverlay()
 ```
 
-Leave `progress` nil for a looping animation with no percentage.
+`updateProgressOverlay` changes the panel in place — no re-animation, no flicker — and clamps to `0...1`.
 
-### Celebration
-
-```swift
-toast.showRiveCelebration(
-    animation: RiveAnimationSource(asset: "celebrate_streak", fallbackSymbol: "flame.fill"),
-    title: "7-day streak",
-    message: "Keep it going tomorrow.",
-    actionTitle: "Nice!"
-)
-```
-
-### What it does for you
-
-- **Files load once** and are cached; view models are cheap after that.
-- **A missing or renamed `.riv` never crashes** — `RiveViewModel(fileName:)` force-tries
-  internally, so loading goes through the throwing API and falls back to the SF Symbol,
-  with one log line.
-- **Reduce Motion** skips Rive entirely and shows the symbol.
-- **Animations stop on disappear**, so Rive's display link doesn't keep running.
-
-> One gotcha from the Rive runtime: `RiveRuntime` exports its own `Color` type. In a file
-> that imports both it and SwiftUI, write `SwiftUI.Color` (this package exposes
-> `RiveToastColor` for that).
-
-
----
-
-## Quick Start
-
-### Setup (One-time)
-
-Add `.setupToastUI()` to your root view:
+### Cancellable
 
 ```swift
-import SwiftUI
-import ToastUI
-
-@main
-struct YourApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .setupToastUI() // ✅ Add this
-        }
-    }
-}
-```
-
-### Basic Toast Usage
-
-```swift
-import SwiftUI
-import ToastUI
-
-struct ContentView: View {
-    @Environment(\.toast) var toast
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Button("Show Success") {
-                toast.success("Operation completed!")
-            }
-
-            Button("Show Error") {
-                toast.error("Something went wrong")
-            }
-
-            Button("Show Warning") {
-                toast.warning("Please check your input")
-            }
-        }
-    }
-}
-```
-
----
-
-## 📖 Complete Guide
-
-## Table of Contents
-
-1. [Toast Notifications](#toast-notifications)
-2. [Progress Overlay](#progress-overlay)
-3. [Dialog System](#dialog-system)
-4. [Advanced Features](#advanced-features)
-
----
-
-## Toast Notifications
-
-### Basic Toast Types
-
-```swift
-@Environment(\.toast) var toast
-
-// Success
-toast.success("Saved successfully!")
-
-// Error
-toast.error("Failed to save")
-
-// Warning
-toast.warning("Low battery")
-
-// Info
-toast.info("New update available")
-
-// Glass effect (iOS 26+, auto-fallback)
-toast.glass("Beautiful glass toast", alignment: .top)
-
-// Progress (single, non-stacking)
-toast.progress("Uploading...", alignment: .center)
-```
-
-### Toast with Message
-
-```swift
-toast.success(
-    "Payment Complete",
-    message: "Your order #12345 has been confirmed"
-)
-```
-
-### Custom Alignment
-
-```swift
-toast.success("Top toast", alignment: .top)
-toast.info("Center toast", alignment: .center)
-toast.error("Bottom toast", alignment: .bottom)
-```
-
-### Custom Icon
-
-```swift
-toast.success("Custom icon") {
-    Image(systemName: "star.fill")
-        .font(.largeTitle)
-        .foregroundStyle(.yellow)
-}
-```
-
-### Custom Colors
-
-```swift
-toast.show(
-    ToastMessage(
-        type: .custom(
-            backgroundColor: .purple,
-            foregroundColor: .white,
-            iconColor: .yellow
-        ),
-        title: "Custom Colors",
-        alignment: .top
-    )
-)
-```
-
-### Copy to Clipboard
-
-```swift
-// Shows a copy button that copies the message
-toast.error("Error: File not found", enableCopy: true)
-```
-
----
-## Progress Overlay
-
-The Progress Overlay system provides a powerful way to show loading states with full customization over appearance, position, and behavior. Unlike toasts, progress overlays are designed for longer-running operations and provide more control over blocking user interaction.
-
-### Basic Usage
-
-```swift
-@Environment(\.toast) var toast
-
-// Simple progress overlay
-Button("Show Progress") {
-    toast.showProgressOverlay()
-    
-    // Dismiss after task completes
-    Task {
-        await performTask()
-        toast.dismissProgressOverlay()
-    }
-}
-
-// With title and message
 toast.showProgressOverlay(
-    title: "Loading",
-    message: "Please wait..."
+    title: "Uploading run",
+    progress: 0,
+    onCancel: { upload.cancel() }
 )
+```
 
-// Dismiss
-toast.dismissProgressOverlay()
+### Dismissible by the user
+
+```swift
+toast.showProgressOverlay(title: "Working…", dismissible: true)
 ```
 
 ### Positions
 
 ```swift
-// Top position
-toast.showProgressOverlay(
-    title: "Loading",
-    position: .top
-)
-
-// Center position (default)
-toast.showProgressOverlay(
-    title: "Processing",
-    position: .center
-)
-
-// Bottom position
-toast.showProgressOverlay(
-    title: "Uploading",
-    position: .bottom
-)
-
-// Custom position
-toast.showProgressOverlay(
-    title: "Loading",
-    position: .custom(x: 200, y: 300)
-)
+toast.showProgressOverlay(title: "Top", position: .top)
+toast.showProgressOverlay(title: "Centre", position: .center)      // default
+toast.showProgressOverlay(title: "Bottom", position: .bottom)
+toast.showProgressOverlay(title: "Anywhere", position: .custom(x: 200, y: 400))
 ```
 
-### Built-in Configurations
+### Looks
 
 ```swift
-// Default - dark background
-toast.showProgressOverlay(
-    title: "Loading",
-    configuration: .default
-)
-
-// Glass effect (iOS 26+)
-toast.showProgressOverlay(
-    title: "Processing",
-    configuration: .glass
-)
-
-// Light theme
-toast.showProgressOverlay(
-    title: "Uploading",
-    configuration: .light
-)
-
-// Minimal size
-toast.showProgressOverlay(configuration: .minimal)
-
-// Large size
-toast.showProgressOverlay(
-    title: "Downloading",
-    message: "This may take a while",
-    configuration: .large
-)
-
-// Clear background (only shows content)
-toast.showProgressOverlay(
-    title: "Loading",
-    configuration: .clear
-)
-
-// Non-blocking (allows user interaction)
-toast.showProgressOverlay(
-    title: "Background Task",
-    configuration: .nonBlocking
-)
+toast.showProgressOverlay(title: "Glass", configuration: .glass)
 ```
 
-### Custom Configuration
+Presets: `.default`, `.glass`, `.light`, `.minimal`, `.large`, `.clear`, `.nonBlocking`, `.celebration`.
 
 ```swift
-let config = ProgressOverlayConfiguration(
-    backgroundColor: .blue,
-    backgroundOpacity: 0.9,
-    useGlassEffect: false,
-    clearBackground: false,
-    cornerRadius: 20,
-    width: 250,
-    height: 200,
-    minWidth: 120,
-    minHeight: 120,
-    horizontalPadding: 24,
-    verticalPadding: 24,
-    shadowColor: .black.opacity(0.2),
-    shadowRadius: 8,
-    shadowX: 0,
-    shadowY: 4,
-    isBlocking: true,
-    backdropOpacity: 0.3
-)
-
 toast.showProgressOverlay(
-    title: "Custom Progress",
-    configuration: config
-)
-```
-
-### Custom Views
-
-You can pass your own custom SwiftUI views to create completely custom progress overlays:
-
-```swift
-// Custom spinner with custom styling
-toast.showProgressOverlay {
-    VStack(spacing: 16) {
-        ProgressView()
-            .progressViewStyle(.circular)
-            .scaleEffect(2)
-            .tint(.green)
-        Text("Custom Loading")
-            .font(.headline)
-            .foregroundStyle(.green)
-    }
-}
-
-// Custom view with image and text
-toast.showProgressOverlay {
-    VStack(spacing: 16) {
-        Image(systemName: "hourglass")
-            .font(.system(size: 50))
-            .foregroundStyle(.orange)
-            .symbolEffect(.pulse, isActive: true)
-        Text("Processing")
-            .font(.title3)
-            .fontWeight(.semibold)
-        Text("This may take a moment")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-    }
-}
-
-// With configuration
-toast.showProgressOverlay(
-    configuration: .glass
-) {
-    // Your custom view here
-    MyCustomProgressView()
-}
-```
-
-### Dismissible Overlays
-
-```swift
-// With close button
-toast.showProgressOverlay(
-    title: "Loading",
-    message: "Tap X to cancel",
-    dismissible: true
-)
-
-// Non-blocking and dismissible
-toast.showProgressOverlay(
-    title: "Background Task",
-    message: "You can still interact with the app",
-    configuration: .nonBlocking,
-    dismissible: true
-)
-```
-
-### Practical Examples
-
-#### Network Request
-```swift
-func loadData() async {
-    toast.showProgressOverlay(
-        title: "Loading Data",
-        message: "Fetching from server..."
-    )
-    
-    do {
-        let data = try await api.fetchData()
-        toast.dismissProgressOverlay()
-        toast.success("Data loaded successfully!")
-    } catch {
-        toast.dismissProgressOverlay()
-        toast.error("Failed to load data")
-    }
-}
-```
-
-#### Long Running Task
-```swift
-func processLargeFile() async {
-    let config = ProgressOverlayConfiguration(
-        backgroundColor: .purple,
+    title: "Custom",
+    configuration: ProgressOverlayConfiguration(
+        backgroundColor: .black,
         backgroundOpacity: 0.9,
-        cornerRadius: 24,
-        isBlocking: true
+        cornerRadius: 20,
+        minWidth: 160,
+        minHeight: 160,
+        isBlocking: true,      // blocks taps on the app underneath
+        backdropOpacity: 0.35
     )
-    
-    toast.showProgressOverlay(
-        title: "Processing File",
-        message: "This may take a few minutes",
-        configuration: config,
-        dismissible: false
-    )
-    
-    await performLongTask()
-    
-    toast.dismissProgressOverlay()
-    toast.success("Processing complete!")
+)
+```
+
+`isBlocking` genuinely blocks: nothing behind the overlay can be tapped while it is up.
+
+### Your own content
+
+```swift
+toast.showProgressOverlay(configuration: .clear) {
+    VStack(spacing: 12) {
+        MyAnimatedLogo()
+        Text("Crunching your stats…")
+    }
 }
 ```
 
-#### Custom Progress Indicator
-```swift
-@State private var progress: Double = 0.0
+### Checking state
 
-func uploadFile() {
-    toast.showProgressOverlay {
-        VStack(spacing: 20) {
-            ProgressView(value: progress, total: 1.0)
-                .progressViewStyle(.linear)
-                .tint(.blue)
-                .frame(width: 200)
-            
-            Text("Uploading: \(Int(progress * 100))%")
-                .font(.headline)
-            
-            Text("Please don't close the app")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-    
-    // Update progress and dismiss when done
-    Task {
-        for i in 0...100 {
-            progress = Double(i) / 100.0
-            try? await Task.sleep(nanoseconds: 50_000_000)
-        }
-        toast.dismissProgressOverlay()
-        toast.success("Upload complete!")
-    }
-}
+```swift
+if toast.isProgressOverlayShowing { … }
 ```
 
 ---
 
+## Async loading
 
-## Dialog System
+`withLoading` runs the work behind the overlay and always takes it away again — on success, on a thrown error, and on cancellation. This is the recommended way to show loading:
 
-### Basic Dialog
+```swift
+// No progress to report
+let profile = try await toast.withLoading("Loading profile") {
+    try await api.profile()
+}
+
+// Reporting progress, cancellable, with an error toast on failure
+let run = try await toast.withLoading(
+    "Uploading run",
+    determinate: true,
+    cancellable: true,
+    errorTitle: "Upload failed"
+) { report in
+    try await api.upload(run) { report($0) }   // 0...1
+}
+```
+
+Cancel cancels the task running your closure, so `Task.isCancelled` and `try Task.checkCancellation()` behave as usual.
+
+---
+
+## Dialogs
+
+iOS only.
+
+### A custom dialog
 
 ```swift
 @State private var showDialog = false
 
-Button("Show Dialog") {
-    showDialog = true
-}
-.dialog(isPresented: $showDialog) {
-    VStack(spacing: 20) {
-        Text("Custom Dialog")
-            .font(.title)
-
-        Text("This is a custom dialog")
-
-        Button("Close") {
-            showDialog = false
+Button("Show") { showDialog = true }
+    .dialog(isPresented: $showDialog) {
+        VStack(spacing: 20) {
+            Text("Custom Dialog").font(.title)
+            Text("Any SwiftUI content goes here.")
+            Button("Close") { showDialog = false }
         }
+        .padding()
     }
-    .padding()
+```
+
+### Pre-built content
+
+```swift
+.dialog(isPresented: $showAlert) {
+    AlertDialog(
+        title: "Discard run?",
+        message: "This run hasn't been saved yet.",
+        primaryButton: DialogButton(title: "Discard", style: .destructive) { discard() },
+        secondaryButton: DialogButton(title: "Keep", style: .cancel) { showAlert = false }
+    )
+}
+
+.dialog(isPresented: $showConfirm) {
+    ConfirmationDialog(
+        title: "Delete activity?",
+        message: "This can't be undone.",
+        destructiveAction: "Delete",
+        cancelAction: "Cancel",
+        onConfirm: { delete() },
+        onCancel: { showConfirm = false }
+    )
 }
 ```
 
-### Dialog Configuration
+`DialogButtonStyle` is `.primary`, `.destructive` or `.cancel`.
+
+### Configuration
 
 ```swift
 .dialog(
     config: DialogConfiguration(
         backgroundColor: .black.opacity(0.6),
         cornerRadius: 24,
+        shadowRadius: 20,
+        maxWidth: 500,
+        horizontalPadding: 24,
         dismissOnBackgroundTap: true,
         animationDuration: 0.35
     ),
@@ -690,61 +465,210 @@ Button("Show Dialog") {
 }
 ```
 
----
-
-## Advanced Features
+Presets: `.default`, `.compact`, `.wide`.
 
 ---
 
-## Platform Support
+## Rive animations
 
-### iOS 26+ Glass Effect
-
-On iOS 26+, the `.glass` style uses `.ultraThinMaterial` for a true glass effect.
-
-### iOS 16-25 Fallback
-
-On iOS 16-25, the `.glass` style automatically falls back to `.regularMaterial`.
-
-### macOS Support
-
-Full support on macOS 13.1+.
-
----
-
-## API Reference
-
-### Toast API
+Add the `ToastUIRive` product, put your `.riv` files in the app bundle, and describe one:
 
 ```swift
-@Environment(\.toast) var toast
+import ToastUIRive
 
-// Show methods
-toast.show(_ message: ToastMessage)
-toast.success(_ title: String, message: String? = nil, alignment: ToastAlignment = .top)
-toast.error(_ title: String, message: String? = nil, alignment: ToastAlignment = .top, enableCopy: Bool = false)
-toast.warning(_ title: String, message: String? = nil, alignment: ToastAlignment = .top)
-toast.info(_ title: String, message: String? = nil, alignment: ToastAlignment = .top)
-toast.glass(_ title: String, message: String? = nil, alignment: ToastAlignment = .top)
-toast.progress(_ title: String, message: String? = nil, alignment: ToastAlignment = .center)
-
-// Dismiss
-toast.dismiss(id: UUID)
+let savedTick = RiveAnimationSource(
+    asset: "toast_success",              // toast_success.riv
+    stateMachine: "State Machine 1",     // default
+    fallbackSymbol: "checkmark.circle.fill"
+)
 ```
 
+### As a toast icon
+
+```swift
+toast.presentRive(title: "Run saved", animation: savedTick, type: .success)
+
+toast.presentRive(
+    title: "Achievement unlocked",
+    message: "10 runs this month",
+    animation: savedTick,
+    type: .success,
+    duration: 4,
+    iconSize: 32
+)
+```
+
+### As the loading animation
+
+Give the source a `progressInput` — a number input (0–100) in your state machine — and the animation follows real progress:
+
+```swift
+let uploading = RiveAnimationSource(
+    asset: "loading_ring",
+    progressInput: "progress",
+    fallbackSymbol: "arrow.up.circle"
+)
+
+toast.showRiveProgressOverlay(
+    animation: uploading,
+    title: "Uploading run",
+    progress: 0,
+    onCancel: { upload.cancel() }
+)
+
+for await fraction in upload.progress {
+    toast.updateProgressOverlay(progress: fraction)
+}
+
+toast.dismissProgressOverlay()
+```
+
+Leave `progress` nil for a looping animation with no percentage.
+
+### As a celebration
+
+```swift
+toast.showRiveCelebration(
+    animation: RiveAnimationSource(asset: "celebrate_streak", fallbackSymbol: "flame.fill"),
+    title: "7-day streak",
+    message: "Keep it going tomorrow.",
+    actionTitle: "Nice!"
+) {
+    router.push(.streakDetails)     // optional, runs after the user taps
+}
+```
+
+### Preloading
+
+Reading a `.riv` from disk the first time can hitch. Warm them up when the screen appears:
+
+```swift
+RiveAnimationCache.shared.preload([savedTick, uploading, streak])
+RiveAnimationCache.shared.purge()    // e.g. on a memory warning
+```
+
+### Anywhere else in your app
+
+`RiveAnimationView` is public, so it isn't limited to toasts:
+
+```swift
+RiveAnimationView(streak, size: 160)
+RiveAnimationView(uploading, size: 80, progress: 0.4)
+```
+
+### What it handles for you
+
+- **Files load once** and are cached; view models built from them are cheap.
+- **A missing or renamed `.riv` never crashes.** Rive's own `RiveViewModel(fileName:)` force-tries internally; ToastUIRive loads through the throwing API and falls back to `fallbackSymbol`, with one log line.
+- **Reduce Motion** skips Rive and draws the symbol instead.
+- **Animations stop on disappear**, so Rive's display link doesn't keep running in the background.
+
+> **Gotcha:** `RiveRuntime` exports its own `Color`. In a file importing both it and SwiftUI, write `SwiftUI.Color` — this module exposes `RiveToastColor` for exactly that.
 
 ---
 
-## Examples
+## Examples app
 
-Check out the included example file:
-- `ToastUIExamplesView.swift` - Toast and Dialog examples
+The showcase screens live in their own product, so they never ship inside your app:
+
+```swift
+import ToastUIExamples
+
+ToastUIExamplesView()
+```
+
+Add `ToastUIExamples` to a demo target only.
+
+---
+
+## Testing
+
+`ToastManager` is a plain `@MainActor` class, so behaviour is testable without any views:
+
+```swift
+import Testing
+@testable import ToastUI
+
+@MainActor
+@Test func aGroupedToastReplacesTheOneOnScreen() {
+    let manager = ToastManager()
+
+    manager.present(ToastMessage(title: "GPS lost", type: .warning, groupID: "gps"))
+    manager.present(ToastMessage(title: "GPS weak", type: .warning, groupID: "gps"))
+
+    #expect(manager.toasts.count == 1)
+    #expect(manager.toasts[0].title == "GPS weak")
+}
+```
+
+Observe haptics instead of firing them:
+
+```swift
+var played: [ToastType] = []
+manager.haptics = { played.append($0) }
+manager.hapticsEnabled = true
+```
+
+Run the package's own tests with ⌘U, or:
+
+```bash
+xcodebuild test -scheme ToastUI-Package -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+```
+
+---
+
+## API reference
+
+### ToastManager
+
+| Member | What it does |
+| --- | --- |
+| `success/error/warning/info/glass(title:message:…)` | show a toast of that type |
+| `progress(title:)` | a toast with a spinner; showing it again updates the text |
+| `present(_ toast: ToastMessage)` | show a toast you built yourself (actions, grouping, sticky) |
+| `present(title:…) { icon }` | show a toast with a custom icon view |
+| `dismiss()` / `dismiss(id:)` / `dismissAll()` | remove toasts |
+| `maximumToasts` | cap per alignment (default 5) |
+| `hapticsEnabled` / `haptics` | opt in to feedback, or supply your own |
+| `showProgressOverlay(…)` | loading panel, indeterminate or determinate |
+| `showProgressOverlay(…) { content }` | loading panel with your own content |
+| `updateProgressOverlay(progress:title:message:)` | update it in place |
+| `dismissProgressOverlay()` / `isProgressOverlayShowing` | hide it / check it |
+| `withLoading(_:…) { report in }` | run async work behind the panel |
+
+### ToastMessage
+
+`title`, `message`, `type`, `duration`, `alignment`, `customIcon`, `backgroundColor`, `configuration`, `showCloseButton`, `enableCopy`, `groupID`, `isSticky`, `onTap`, `action`, `playsHaptic`.
+
+### ToastUIRive
+
+| Member | What it does |
+| --- | --- |
+| `RiveAnimationSource(asset:stateMachine:artboard:trigger:progressInput:fallbackSymbol:bundle:)` | describes an animation |
+| `presentRive(title:animation:…)` | toast with an animated icon |
+| `showRiveProgressOverlay(animation:…)` | loading panel with an animation |
+| `showRiveCelebration(animation:title:…)` | full-screen celebration |
+| `RiveAnimationView(_:size:tint:progress:)` | the animation as a plain view |
+| `RiveAnimationCache.shared.preload(_:)` / `.purge()` | warm up / release files |
+
+---
+
+## Migrating
+
+### To 3.4.0
+
+- **Platforms:** iOS 17 / macOS 14 / watchOS 10 (was iOS 16 / macOS 13.1).
+- **macOS and watchOS now actually show toasts.** `setupToastUI()` previously did nothing outside iOS.
+- **Haptics are opt-in:** set `ToastManager.shared.hapticsEnabled = true` if you want them.
+- **Examples moved** to the `ToastUIExamples` product; add it to your demo target if you used `ToastUIExamplesView()`.
+- **`ToastMessage.updateTitle(_:)` is internal** (it was public by accident).
+- `.glass` now uses real Liquid Glass on iOS 26 and later, rather than a material.
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome — please open an issue or a pull request.
 
 ---
 
@@ -757,16 +681,6 @@ ToastUI is available under the MIT license. See the LICENSE file for more info.
 ## Credits
 
 Created by [Pardip Bhatti](https://github.com/debuging-life)
-
----
-
-## Support
-
-If you find this package useful, please consider:
-- ⭐️ Starring the repo
-- 🐛 Reporting issues
-- 💡 Suggesting new features
-- 📖 Improving documentation
 
 ---
 

@@ -29,6 +29,9 @@ public struct ToastMessage: Identifiable, Equatable {
     public let onTap: (@MainActor () -> Void)?
     /// A button inside the toast: Undo, Retry, View.
     public let action: ToastAction?
+    /// Overrides `ToastManager.hapticsEnabled` for this one toast: true always plays,
+    /// false never does, nil follows the app-wide setting.
+    public let playsHaptic: Bool?
 
     public init(
         title: String,
@@ -44,7 +47,8 @@ public struct ToastMessage: Identifiable, Equatable {
         groupID: String? = nil,
         isSticky: Bool = false,
         onTap: (@MainActor () -> Void)? = nil,
-        action: ToastAction? = nil
+        action: ToastAction? = nil,
+        playsHaptic: Bool? = nil
     ) {
         self.title = title
         self.message = message
@@ -60,6 +64,7 @@ public struct ToastMessage: Identifiable, Equatable {
         self.isSticky = isSticky
         self.onTap = onTap
         self.action = action
+        self.playsHaptic = playsHaptic
     }
     
     /// What VoiceOver reads when the toast appears.
@@ -95,6 +100,7 @@ public extension ToastMessage {
         isSticky: Bool = false,
         onTap: (@MainActor () -> Void)? = nil,
         action: ToastAction? = nil,
+        playsHaptic: Bool? = nil,
         @ViewBuilder icon: () -> Icon
     ) {
         self.init(
@@ -111,7 +117,8 @@ public extension ToastMessage {
             groupID: groupID,
             isSticky: isSticky,
             onTap: onTap,
-            action: action
+            action: action,
+            playsHaptic: playsHaptic
         )
     }
     

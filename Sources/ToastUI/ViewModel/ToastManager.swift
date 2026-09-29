@@ -20,8 +20,13 @@ public class ToastManager: ObservableObject {
     /// Toasts beyond this are dropped rather than queued forever.
     public var maximumToasts = 5
 
-    /// Whether a toast plays haptic feedback as it appears.
-    public var hapticsEnabled = true
+    /// Whether toasts play haptic feedback as they appear. **Off by default** —
+    /// turn it on once, wherever you configure the app:
+    ///
+    ///     ToastManager.shared.hapticsEnabled = true
+    ///
+    /// A single toast can override this either way with `ToastMessage.playsHaptic`.
+    public var hapticsEnabled = false
 
     /// Override ToastUI's haptics with your own. Tests set this to observe them.
     public var haptics: (@MainActor (ToastType) -> Void)?
@@ -367,7 +372,8 @@ public class ToastManager: ObservableObject {
     // MARK: - Haptics
 
     private func playHaptics(for toast: ToastMessage) {
-        guard hapticsEnabled else { return }
+        // The toast decides when it says so; otherwise the app-wide setting does.
+        guard toast.playsHaptic ?? hapticsEnabled else { return }
         (haptics ?? Self.defaultHaptics)(toast.type)
     }
 

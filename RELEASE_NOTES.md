@@ -8,7 +8,8 @@
 - **Swipe to dismiss**, in the direction the toast came from.
 - **Grouping** (`groupID`): repeat events replace the toast on screen instead of stacking.
 - **Sticky toasts** (`isSticky`) that wait for the user.
-- **Haptics** for success, error and warning; `hapticsEnabled` and a `haptics` override.
+- **Haptics**, opt-in: `ToastManager.hapticsEnabled` is off until the app turns it on,
+  `ToastMessage.playsHaptic` overrides it per toast, and `haptics` swaps in your own.
 - **`withLoading`**: runs async work behind the loading overlay, forwards progress, and
   always removes the overlay — on success, on error, and on cancellation.
 - **watchOS 10** support, and `RiveAnimationCache.preload(_:)` so the first celebration

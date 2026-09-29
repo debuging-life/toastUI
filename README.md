@@ -22,7 +22,7 @@ A powerful notification system for SwiftUI with toasts, progress overlays, and d
 - **Swipe to dismiss** - flick a toast away, in the direction it came from
 - **Grouping** - repeat events replace each other instead of piling up
 - **Sticky** - a toast that waits for the user ("You're offline")
-- **Haptics** - success and error feedback, overridable or off
+- **Haptics** - opt-in success/error feedback, per-toast override, or your own
 - **VoiceOver** - toasts are announced, buttons are labelled
 
 ### 🎞️ Rive Animations (optional `ToastUIRive` product)
@@ -142,12 +142,22 @@ error, and on cancellation — the usual way a loading overlay gets stuck on scr
 
 ## Haptics
 
-On by default for success, error and warning:
+**Off by default.** Turn them on once, wherever you configure the app:
 
 ```swift
-toast.hapticsEnabled = false                    // silence them
-toast.haptics = { type in myHaptics.play(type) } // or use your own
+ToastManager.shared.hapticsEnabled = true       // success, error and warning
+ToastManager.shared.haptics = { type in myHaptics.play(type) }   // or use your own
 ```
+
+A single toast can override the app-wide setting either way — handy when haptics are
+off generally but a personal best deserves one:
+
+```swift
+toast.present(ToastMessage(title: "New personal best", type: .success, playsHaptic: true))
+toast.present(ToastMessage(title: "Synced", type: .info, playsHaptic: false))
+```
+
+If your app has a "Haptics" switch in Settings, bind it straight to `hapticsEnabled`.
 
 ---
 

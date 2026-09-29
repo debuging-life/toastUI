@@ -5,7 +5,7 @@ import Testing
 @MainActor
 private func silentManager() -> ToastManager {
     let manager = ToastManager()
-    manager.hapticsEnabled = false   // no device feedback in tests
+    manager.hapticsEnabled = false   // off by default anyway; explicit for clarity
     return manager
 }
 
@@ -71,15 +71,32 @@ struct StickyAndActionTests {
         #expect(action.dismissesToast)
     }
 
-    @Test func hapticsCanBeObservedAndSilenced() {
+    @Test func hapticsAreOffUntilTheAppTurnsThemOn() {
         let manager = ToastManager()
         var played: [ToastType] = []
         manager.haptics = { played.append($0) }
 
         manager.success(title: "Saved")
-        manager.error(title: "Failed")
+        #expect(played.isEmpty)          // opt-in
 
-        #expect(played == [.success, .error])
+        manager.hapticsEnabled = true
+        manager.error(title: "Failed")
+        #expect(played == [.error])
+    }
+
+    @Test func aToastCanOverrideTheAppWideSetting() {
+        let manager = ToastManager()
+        var played: [ToastType] = []
+        manager.haptics = { played.append($0) }
+
+        // Off app-wide, but this one asks for feedback
+        manager.present(ToastMessage(title: "New personal best", type: .success, playsHaptic: true))
+        #expect(played == [.success])
+
+        // On app-wide, but this one stays quiet
+        manager.hapticsEnabled = true
+        manager.present(ToastMessage(title: "Synced", type: .info, playsHaptic: false))
+        #expect(played == [.success])
     }
 }
 

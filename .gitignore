@@ -7,3 +7,6 @@ DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
 .claude
+
+# A library resolves its own dependencies; consumers resolve theirs.
+Package.resolved

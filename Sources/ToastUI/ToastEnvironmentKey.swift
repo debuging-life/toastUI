@@ -9,5 +9,5 @@
 import SwiftUI
 
 public extension EnvironmentValues {
-    @Entry public var toast: ToastManager = .shared
+    @Entry var toast: ToastManager = .shared
 }

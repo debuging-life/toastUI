@@ -7,14 +7,48 @@
 
 import SwiftUI
 
-public class ToastManager: ObservableObject, @unchecked Sendable {
+@MainActor
+public class ToastManager: ObservableObject {
     @Published public var toasts: [ToastMessage] = []
     @Published public var progressOverlay: ProgressOverlayMessage?
+    /// The dialog awaiting an answer, if any. Driven by `confirm` and `alert`.
+    @Published public var dialog: DialogRequest?
     private var workItems: [UUID: DispatchWorkItem] = [:]
 
-    public static let shared = ToastManager()
+    /// Nonisolated so it can be the default for `@Environment(\.toast)`; the
+    /// initialiser touches no main-actor state.
+    public nonisolated static let shared = ToastManager()
 
-    public init() {}
+    /// Toasts beyond this are dropped rather than queued forever.
+    public var maximumToasts = 5
+
+    /// Whether toasts play haptic feedback as they appear. **Off by default** —
+    /// turn it on once, wherever you configure the app:
+    ///
+    ///     ToastManager.shared.hapticsEnabled = true
+    ///
+    /// A single toast can override this either way with `ToastMessage.playsHaptic`.
+    public var hapticsEnabled = false
+
+    /// Override ToastUI's haptics with your own. Tests set this to observe them.
+    public var haptics: (@MainActor (ToastType) -> Void)?
+
+    /// Fonts, colours and defaults for everything this manager shows.
+    public var theme: ToastTheme = .default
+
+    /// Every notable thing that happens, for analytics.
+    public var onEvent: (@MainActor (ToastEvent) -> Void)?
+
+    /// True while a stack is fanned out. The iOS toast window takes every touch in
+    /// that state, so the Collapse and Clear all controls — which sit outside any
+    /// toast's own rectangle — actually receive taps.
+    @Published public private(set) var isStackExpanded = false
+
+    /// While true, nothing dismisses itself: the user is reading, dragging, or the
+    /// stack is expanded. Timers restart when it goes back to false.
+    public private(set) var isAutoDismissPaused = false
+
+    public nonisolated init() {}
     
     // MARK: - Main Present Method
     
@@ -78,8 +112,30 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
     
     // MARK: - Internal Present Logic
     
+    /// Presents a prepared message. Everything else here funnels into this.
+    @MainActor
+    public func present(_ toast: ToastMessage) {
+        presentToast(toast)
+    }
+
     @MainActor
     private func presentToast(_ toast: ToastMessage) {
+        // A grouped toast replaces the one already on screen rather than stacking:
+        // "GPS signal lost" ten times in a run should still be one toast.
+        if let group = toast.groupID,
+           let existing = toasts.firstIndex(where: { $0.groupID == group }) {
+            let replacedID = toasts[existing].id
+            workItems[replacedID]?.cancel()
+            workItems.removeValue(forKey: replacedID)
+            toasts[existing] = toast
+            AccessibilityAnnouncer.announce(toast.accessibilityText)
+            playHaptics(for: toast)
+            onEvent?(.dismissed(id: replacedID, reason: .replaced))
+            onEvent?(.shown(id: toast.id, title: toast.title, type: toast.type))
+            scheduleAutoDismiss(for: toast)
+            return
+        }
+
         // For progress toasts, check if one already exists for this alignment
         if toast.type == .progress {
             if let existingIndex = toasts.firstIndex(where: { $0.type == .progress && $0.alignment == toast.alignment }) {
@@ -100,6 +156,19 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         // For non-progress toasts, add with animation
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             toasts.append(toast)
+            // Keep the stack bounded. The least important, oldest toast makes way,
+            // so a failure isn't pushed off screen by a run of info messages.
+            while toasts.filter({ $0.alignment == toast.alignment }).count > maximumToasts {
+                let candidates = toasts.filter { $0.alignment == toast.alignment && $0.id != toast.id }
+                guard let evicted = candidates.min(by: { lhs, rhs in
+                    lhs.type.priority != rhs.type.priority
+                        ? lhs.type.priority < rhs.type.priority
+                        : (toasts.firstIndex(of: lhs) ?? 0) < (toasts.firstIndex(of: rhs) ?? 0)
+                }) else { break }
+                workItems[evicted.id]?.cancel()
+                workItems.removeValue(forKey: evicted.id)
+                toasts.removeAll { $0.id == evicted.id }
+            }
         }
         
         // Cancel timers for all toasts in this alignment (they're no longer topmost)
@@ -109,6 +178,10 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             workItems.removeValue(forKey: existingToast.id)
         }
         
+        AccessibilityAnnouncer.announce(toast.accessibilityText)
+        playHaptics(for: toast)
+        onEvent?(.shown(id: toast.id, title: toast.title, type: toast.type))
+
         // Schedule auto-dismiss for non-progress toasts
         scheduleAutoDismiss(for: toast)
     }
@@ -125,8 +198,13 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             }
         }
         
+        // A sticky toast waits for the user. `.infinity` (or anything absurd) would
+        // trap DispatchTime maths, so it is treated the same way.
+        guard !isAutoDismissPaused,
+              !toast.isSticky,
+              toast.duration.isFinite, toast.duration > 0, toast.duration < 60 * 60 else { return }
         workItems[toast.id] = task
-        DispatchQueue.main.asyncAfter(deadline: .now() + toast.duration, execute: task)
+        DispatchQueue.main.asyncAfter(deadline: .now() + readingDuration(for: toast), execute: task)
     }
     
     // MARK: - Convenience Methods
@@ -274,7 +352,13 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
     // MARK: - Dismiss Methods
     
     @MainActor
-    public func dismiss(id: UUID) {
+    public func dismiss(id: UUID, reason: ToastEvent.DismissReason = .programmatic) {
+        onEvent?(.dismissed(id: id, reason: reason))
+        removeToast(id: id)
+    }
+
+    @MainActor
+    private func removeToast(id: UUID) {
         // Cancel the work item for this toast
         workItems[id]?.cancel()
         workItems.removeValue(forKey: id)
@@ -313,16 +397,77 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         }
     }
 
+    /// VoiceOver users need longer than the time it takes to glance at a toast.
+    private func readingDuration(for toast: ToastMessage) -> TimeInterval {
+        #if os(iOS) || os(tvOS)
+        guard UIAccessibility.isVoiceOverRunning else { return toast.duration }
+        return max(toast.duration * 2, toast.duration + 4)
+        #else
+        return toast.duration
+        #endif
+    }
+
+    /// Set by the host view as stacks expand and collapse.
+    func setStackExpanded(_ expanded: Bool) {
+        guard expanded != isStackExpanded else { return }
+        isStackExpanded = expanded
+    }
+
+    // MARK: - Pausing
+
+    /// Stops toasts dismissing themselves — while a finger is on one, while the stack
+    /// is expanded, or while the app is in the background. Resuming gives each visible
+    /// toast a fresh window rather than the remainder of an interrupted one.
+    public func setAutoDismissPaused(_ paused: Bool) {
+        guard paused != isAutoDismissPaused else { return }
+        isAutoDismissPaused = paused
+
+        if paused {
+            workItems.values.forEach { $0.cancel() }
+            workItems.removeAll()
+        } else {
+            for alignment in [ToastAlignment.top, .center, .bottom] {
+                if let top = toasts.last(where: { $0.alignment == alignment }), top.type != .progress {
+                    scheduleAutoDismiss(for: top)
+                }
+            }
+        }
+    }
+
+    // MARK: - Haptics
+
+    private func playHaptics(for toast: ToastMessage) {
+        // The toast decides when it says so; otherwise the app-wide setting does.
+        guard toast.playsHaptic ?? hapticsEnabled else { return }
+        (haptics ?? Self.defaultHaptics)(toast.type)
+    }
+
+    static let defaultHaptics: @MainActor (ToastType) -> Void = { type in
+        #if os(iOS)
+        switch type {
+        case .success: UINotificationFeedbackGenerator().notificationOccurred(.success)
+        case .error: UINotificationFeedbackGenerator().notificationOccurred(.error)
+        case .warning: UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        case .info, .progress, .glass: break
+        }
+        #endif
+    }
+
     // MARK: - Progress Overlay Methods
 
     /// Show progress overlay with default spinner
+    /// - Parameters:
+    ///   - progress: 0...1 for a determinate ring; nil keeps the spinner.
+    ///   - onCancel: shows a Cancel button, for uploads and long syncs.
     @MainActor
     public func showProgressOverlay(
         title: String? = nil,
         message: String? = nil,
         position: ProgressOverlayPosition = .center,
         configuration: ProgressOverlayConfiguration = .default,
-        dismissible: Bool = false
+        dismissible: Bool = false,
+        progress: Double? = nil,
+        onCancel: (() -> Void)? = nil
     ) {
         let overlay = ProgressOverlayMessage(
             title: title,
@@ -330,6 +475,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             position: position,
             configuration: configuration,
             dismissible: dismissible,
+            progress: progress,
+            onCancel: onCancel,
             onDismiss: { [weak self] in
                 self?.dismissProgressOverlay()
             }
@@ -337,6 +484,7 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             progressOverlay = overlay
         }
+        AccessibilityAnnouncer.announce([title, message].compactMap { $0 }.joined(separator: ". "))
     }
 
     /// Show progress overlay with custom view
@@ -347,6 +495,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         position: ProgressOverlayPosition = .center,
         configuration: ProgressOverlayConfiguration = .default,
         dismissible: Bool = false,
+        progress: Double? = nil,
+        onCancel: (() -> Void)? = nil,
         @ViewBuilder customView: () -> Content
     ) {
         let overlay = ProgressOverlayMessage(
@@ -356,6 +506,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             configuration: configuration,
             customView: AnyView(customView()),
             dismissible: dismissible,
+            progress: progress,
+            onCancel: onCancel,
             onDismiss: { [weak self] in
                 self?.dismissProgressOverlay()
             }
@@ -363,6 +515,19 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             progressOverlay = overlay
         }
+    }
+
+    /// Updates the overlay that is already on screen, without re-animating it —
+    /// the way an upload reports 0%, 12%, 40%… Does nothing when none is showing.
+    @MainActor
+    public func updateProgressOverlay(progress: Double? = nil,
+                                      title: String? = nil,
+                                      message: String? = nil) {
+        guard var overlay = progressOverlay else { return }
+        if let progress { overlay.progress = min(max(progress, 0), 1) }
+        if let title { overlay.title = title }
+        if let message { overlay.message = message }
+        progressOverlay = overlay   // no withAnimation: the panel must not bounce on every tick
     }
 
     /// Dismiss progress overlay

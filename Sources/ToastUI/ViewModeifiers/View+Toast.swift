@@ -1,41 +1,53 @@
 //
-//  File.swift
+//  View+Toast.swift
 //  ToastUI
 //
-//  Created by Pardip Bhatti on 21/12/25.
-//
-
-import SwiftUI
-
-//public extension View {
-//    /// Enables toast notifications for this view hierarchy
-//    /// Apply this to your root view (typically in your App struct)
-//    func setupToastUI() -> some View {
-//        modifier(ToastViewModifier(manager: ToastManager.shared))
-//    }
-//}
-
-
 
 import SwiftUI
 
 public extension View {
-    /// Enables toast notifications for this view hierarchy
-    /// Apply this to your root view (typically in your App struct)
-    func setupToastUI() -> some View {
-        modifier(ToastSetupModifier())
+    /// Enables toast notifications for this view hierarchy.
+    /// Apply this once, to your root view.
+    ///
+    /// On iOS the toasts live in their own pass-through window — one per scene, so
+    /// iPad and Stage Manager show them in the right place. Elsewhere they are an
+    /// overlay on this view.
+    func setupToastUI(manager: ToastManager = .shared, theme: ToastTheme? = nil) -> some View {
+        modifier(ToastSetupModifier(manager: manager, theme: theme))
     }
 }
 
 private struct ToastSetupModifier: ViewModifier {
+    @ObservedObject var manager: ToastManager
+    let theme: ToastTheme?
+
+    @Environment(\.scenePhase) private var scenePhase
+
     func body(content: Content) -> some View {
-        content
-            .task {
-                #if canImport(UIKit)
-                // Small delay to ensure window scene is ready
-                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-                await ToastWindowManager.shared.setup(with: ToastManager.shared)
-                #endif
+        base(content)
+            .onAppear { if let theme { manager.theme = theme } }
+            // Nothing should time out while the app isn't on screen; a toast shown as
+            // the user leaves would otherwise be gone when they come back.
+            .onChange(of: scenePhase) { _, phase in
+                manager.setAutoDismissPaused(phase != .active)
             }
+    }
+
+    @ViewBuilder
+    private func base(_ content: Content) -> some View {
+        #if os(iOS) || os(tvOS)
+        content.background(
+            ToastSceneReader { scene in
+                ToastWindowManager.shared.setup(with: manager, in: scene)
+            }
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
+        )
+        #else
+        content.overlay {
+            ToastHostView(manager: manager)
+                .allowsHitTesting(manager.progressOverlay != nil || !manager.toasts.isEmpty)
+        }
+        #endif
     }
 }

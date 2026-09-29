@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ToastUI
 
 /// Comprehensive examples showcase for ToastUI
 /// Demonstrates Toast Notifications, Dialogs, and Progress Overlays
@@ -27,6 +28,11 @@ public struct ToastUIExamplesView: View {
             DialogExamplesTab()
                 .tabItem {
                     Label("Dialogs", systemImage: "bubble.left.and.bubble.right.fill")
+                }
+
+            NewFeaturesExamplesView()
+                .tabItem {
+                    Label("What's new", systemImage: "sparkles")
                 }
         }
     }

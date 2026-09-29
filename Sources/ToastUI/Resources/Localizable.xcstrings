@@ -1,0 +1,19 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Cancel" : {},
+    "Clear all" : {},
+    "Collapse" : {},
+    "Copied" : {},
+    "Copy message" : {},
+    "Dismiss" : {},
+    "Error" : {},
+    "In progress" : {},
+    "Loading" : {},
+    "OK" : {},
+    "Progress" : {},
+    "Success" : {},
+    "Warning" : {}
+  },
+  "version" : "1.0"
+}

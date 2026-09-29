@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-public enum ToastType {
+public enum ToastType: Hashable, Sendable {
     case success
     case error
     case warning
@@ -23,6 +23,28 @@ public enum ToastType {
         case .info: return "info.circle.fill"
         case .progress: return "arrow.clockwise.circle.fill"
         case .glass: return "sparkles"
+        }
+    }
+
+    /// Spoken before the title, since colour alone means nothing to VoiceOver.
+    var accessibilityPrefix: String? {
+        switch self {
+        case .success: return L10n.success
+        case .error: return L10n.error
+        case .warning: return L10n.warning
+        case .info: return nil
+        case .progress: return L10n.inProgress
+        case .glass: return nil
+        }
+    }
+
+    /// Used when the stack is full: a failure outranks an update.
+    var priority: Int {
+        switch self {
+        case .error: return 3
+        case .warning: return 2
+        case .success, .progress: return 1
+        case .info, .glass: return 0
         }
     }
 

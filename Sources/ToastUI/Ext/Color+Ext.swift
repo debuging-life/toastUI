@@ -32,3 +32,20 @@ extension Color {
         )
     }
 }
+
+extension Color {
+    /// Rough check used to pick white or primary text on a coloured panel.
+    var isDarkish: Bool {
+        #if canImport(UIKit)
+        var white: CGFloat = 0
+        var alpha: CGFloat = 0
+        guard UIColor(self).getWhite(&white, alpha: &alpha) else { return true }
+        return white < 0.6
+        #elseif canImport(AppKit)
+        guard let converted = NSColor(self).usingColorSpace(.deviceRGB) else { return true }
+        return converted.brightnessComponent < 0.6
+        #else
+        return true
+        #endif
+    }
+}

@@ -161,4 +161,15 @@ public extension ProgressOverlayConfiguration {
     static let nonBlocking = ProgressOverlayConfiguration(
         isBlocking: false
     )
+
+    /// Roomy, dimmed panel for celebrations: personal bests, streaks, finished challenges.
+    static let celebration = ProgressOverlayConfiguration(
+        cornerRadius: 28,
+        minWidth: 280,
+        minHeight: 280,
+        horizontalPadding: 28,
+        verticalPadding: 32,
+        isBlocking: true,
+        backdropOpacity: 0.55
+    )
 }

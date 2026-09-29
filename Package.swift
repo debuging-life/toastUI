@@ -9,7 +9,8 @@ let package = Package(
         // iOS 17 / macOS 14: two-parameter `onChange`, Observation, and the Rive
         // runtime's own floor.
         .iOS(.v17),
-        .macOS(.v14)
+        .macOS(.v14),
+        .watchOS(.v10)
     ],
     products: [
         /// The core library: toasts, progress overlays, dialogs. No dependencies.

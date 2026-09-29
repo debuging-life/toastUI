@@ -11,7 +11,7 @@ import SwiftUI
 public struct ToastMessage: Identifiable, Equatable {
     public let id = UUID()
     public var title: String
-    public let message: String?
+    public var message: String?
     public let type: ToastType
     public let duration: TimeInterval
     public let alignment: ToastAlignment
@@ -20,7 +20,16 @@ public struct ToastMessage: Identifiable, Equatable {
     public let configuration: ToastConfiguration
     public let showCloseButton: Bool
     public let enableCopy: Bool
-    
+    /// Toasts sharing a group replace each other instead of stacking — the fix for
+    /// "GPS signal lost" firing ten times on one run.
+    public let groupID: String?
+    /// Stays until it is dismissed, for "You're offline" and similar.
+    public let isSticky: Bool
+    /// Tapping the body runs this (open the run that just synced).
+    public let onTap: (@MainActor () -> Void)?
+    /// A button inside the toast: Undo, Retry, View.
+    public let action: ToastAction?
+
     public init(
         title: String,
         message: String? = nil,
@@ -31,7 +40,11 @@ public struct ToastMessage: Identifiable, Equatable {
         backgroundColor: Color? = nil,
         configuration: ToastConfiguration = .default,
         showCloseButton: Bool = true,
-        enableCopy: Bool = false
+        enableCopy: Bool = false,
+        groupID: String? = nil,
+        isSticky: Bool = false,
+        onTap: (@MainActor () -> Void)? = nil,
+        action: ToastAction? = nil
     ) {
         self.title = title
         self.message = message
@@ -43,6 +56,10 @@ public struct ToastMessage: Identifiable, Equatable {
         self.configuration = configuration
         self.showCloseButton = showCloseButton
         self.enableCopy = enableCopy
+        self.groupID = groupID
+        self.isSticky = isSticky
+        self.onTap = onTap
+        self.action = action
     }
     
     /// What VoiceOver reads when the toast appears.
@@ -74,6 +91,10 @@ public extension ToastMessage {
         configuration: ToastConfiguration = .default,
         showCloseButton: Bool = true,
         enableCopy: Bool = false,
+        groupID: String? = nil,
+        isSticky: Bool = false,
+        onTap: (@MainActor () -> Void)? = nil,
+        action: ToastAction? = nil,
         @ViewBuilder icon: () -> Icon
     ) {
         self.init(
@@ -86,12 +107,20 @@ public extension ToastMessage {
             backgroundColor: backgroundColor,
             configuration: configuration,
             showCloseButton: showCloseButton,
-            enableCopy: enableCopy
+            enableCopy: enableCopy,
+            groupID: groupID,
+            isSticky: isSticky,
+            onTap: onTap,
+            action: action
         )
     }
     
     // Helper method to update title
     mutating func updateTitle(_ newTitle: String) {
         self.title = newTitle
+    }
+
+    mutating func updateMessage(_ newMessage: String?) {
+        self.message = newMessage
     }
 }

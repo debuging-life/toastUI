@@ -20,6 +20,12 @@ public class ToastManager: ObservableObject {
     /// Toasts beyond this are dropped rather than queued forever.
     public var maximumToasts = 5
 
+    /// Whether a toast plays haptic feedback as it appears.
+    public var hapticsEnabled = true
+
+    /// Override ToastUI's haptics with your own. Tests set this to observe them.
+    public var haptics: (@MainActor (ToastType) -> Void)?
+
     public nonisolated init() {}
     
     // MARK: - Main Present Method
@@ -84,8 +90,28 @@ public class ToastManager: ObservableObject {
     
     // MARK: - Internal Present Logic
     
+    /// Presents a prepared message. Everything else here funnels into this.
+    @MainActor
+    public func present(_ toast: ToastMessage) {
+        presentToast(toast)
+    }
+
     @MainActor
     private func presentToast(_ toast: ToastMessage) {
+        // A grouped toast replaces the one already on screen rather than stacking:
+        // "GPS signal lost" ten times in a run should still be one toast.
+        if let group = toast.groupID,
+           let existing = toasts.firstIndex(where: { $0.groupID == group }) {
+            let replacedID = toasts[existing].id
+            workItems[replacedID]?.cancel()
+            workItems.removeValue(forKey: replacedID)
+            toasts[existing] = toast
+            AccessibilityAnnouncer.announce(toast.accessibilityText)
+            playHaptics(for: toast)
+            scheduleAutoDismiss(for: toast)
+            return
+        }
+
         // For progress toasts, check if one already exists for this alignment
         if toast.type == .progress {
             if let existingIndex = toasts.firstIndex(where: { $0.type == .progress && $0.alignment == toast.alignment }) {
@@ -106,12 +132,18 @@ public class ToastManager: ObservableObject {
         // For non-progress toasts, add with animation
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             toasts.append(toast)
-            // Keep the stack bounded: the oldest in this alignment makes way.
-            while toasts.filter({ $0.alignment == toast.alignment }).count > maximumToasts,
-                  let oldest = toasts.first(where: { $0.alignment == toast.alignment }) {
-                workItems[oldest.id]?.cancel()
-                workItems.removeValue(forKey: oldest.id)
-                toasts.removeAll { $0.id == oldest.id }
+            // Keep the stack bounded. The least important, oldest toast makes way,
+            // so a failure isn't pushed off screen by a run of info messages.
+            while toasts.filter({ $0.alignment == toast.alignment }).count > maximumToasts {
+                let candidates = toasts.filter { $0.alignment == toast.alignment && $0.id != toast.id }
+                guard let evicted = candidates.min(by: { lhs, rhs in
+                    lhs.type.priority != rhs.type.priority
+                        ? lhs.type.priority < rhs.type.priority
+                        : (toasts.firstIndex(of: lhs) ?? 0) < (toasts.firstIndex(of: rhs) ?? 0)
+                }) else { break }
+                workItems[evicted.id]?.cancel()
+                workItems.removeValue(forKey: evicted.id)
+                toasts.removeAll { $0.id == evicted.id }
             }
         }
         
@@ -123,6 +155,7 @@ public class ToastManager: ObservableObject {
         }
         
         AccessibilityAnnouncer.announce(toast.accessibilityText)
+        playHaptics(for: toast)
 
         // Schedule auto-dismiss for non-progress toasts
         scheduleAutoDismiss(for: toast)
@@ -140,9 +173,9 @@ public class ToastManager: ObservableObject {
             }
         }
         
-        // `.infinity` (or anything absurd) would trap DispatchTime maths; such a
-        // toast simply stays until it is dismissed.
-        guard toast.duration.isFinite, toast.duration > 0, toast.duration < 60 * 60 else { return }
+        // A sticky toast waits for the user. `.infinity` (or anything absurd) would
+        // trap DispatchTime maths, so it is treated the same way.
+        guard !toast.isSticky, toast.duration.isFinite, toast.duration > 0, toast.duration < 60 * 60 else { return }
         workItems[toast.id] = task
         DispatchQueue.main.asyncAfter(deadline: .now() + toast.duration, execute: task)
     }
@@ -329,6 +362,24 @@ public class ToastManager: ObservableObject {
         if let last = toasts.last {
             dismiss(id: last.id)
         }
+    }
+
+    // MARK: - Haptics
+
+    private func playHaptics(for toast: ToastMessage) {
+        guard hapticsEnabled else { return }
+        (haptics ?? Self.defaultHaptics)(toast.type)
+    }
+
+    static let defaultHaptics: @MainActor (ToastType) -> Void = { type in
+        #if os(iOS)
+        switch type {
+        case .success: UINotificationFeedbackGenerator().notificationOccurred(.success)
+        case .error: UINotificationFeedbackGenerator().notificationOccurred(.error)
+        case .warning: UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        case .info, .progress, .glass: break
+        }
+        #endif
     }
 
     // MARK: - Progress Overlay Methods

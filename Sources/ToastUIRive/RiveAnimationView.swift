@@ -101,6 +101,12 @@ public final class RiveAnimationCache {
                              artboardName: source.artboard)
     }
 
+    /// Loads files up front — at launch, or when a screen that will celebrate appears —
+    /// so the first play doesn't hitch while the file is read from disk.
+    public func preload(_ sources: [RiveAnimationSource]) {
+        for source in sources { _ = file(for: source) }
+    }
+
     /// Drops the cached files, e.g. on a memory warning.
     public func purge() {
         files.removeAll()

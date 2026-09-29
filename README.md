@@ -2,7 +2,7 @@
 
 A powerful notification system for SwiftUI with toasts, progress overlays, and dialogs - built with modern Swift concurrency and environment-based API.
 
-![Platform](https://img.shields.io/badge/platform-iOS%2017%2B%20%7C%20macOS%2014%2B-blue)
+![Platform](https://img.shields.io/badge/platform-iOS%2017%2B%20%7C%20macOS%2014%2B%20%7C%20watchOS%2010%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-6.2+-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -18,6 +18,12 @@ A powerful notification system for SwiftUI with toasts, progress overlays, and d
 - **Copy to Clipboard** - One-tap copy for errors
 - **Multiple Toasts** - Stack with depth effect
 - **Smart Auto-dismiss** - Proper timer management
+- **Actions** - an Undo / Retry / View button inside the toast, or a tap handler on the whole thing
+- **Swipe to dismiss** - flick a toast away, in the direction it came from
+- **Grouping** - repeat events replace each other instead of piling up
+- **Sticky** - a toast that waits for the user ("You're offline")
+- **Haptics** - success and error feedback, overridable or off
+- **VoiceOver** - toasts are announced, buttons are labelled
 
 ### 🎞️ Rive Animations (optional `ToastUIRive` product)
 - **Animated icons** - any `.riv` file as a toast icon
@@ -25,6 +31,11 @@ A powerful notification system for SwiftUI with toasts, progress overlays, and d
 - **Celebrations** - full-screen moments for streaks, personal bests and finished challenges
 - **Safe by default** - a missing file or Reduce Motion falls back to an SF Symbol instead of crashing
 - **Opt-in** - the core `ToastUI` product still has zero dependencies
+
+### 🧵 Async loading
+- **`withLoading`** - runs your work behind the overlay and always takes it away again, on success, error or cancellation
+- **Progress reporting** - forward 0...1 straight from an upload
+- **Cancellable** - a Cancel button that cancels the task
 
 ### ⏳ Progress Overlay
 - **Independent System** - Separate from toasts for full-screen progress indication
@@ -84,6 +95,59 @@ The package ships **two products**:
 
 Add `ToastUIRive` only if you want Rive; apps that don't never link the runtime.
 
+
+
+---
+
+## Actions, taps and sticky toasts
+
+Build a `ToastMessage` when you want more than a title, and present it:
+
+```swift
+toast.present(
+    ToastMessage(
+        title: "Activity deleted",
+        type: .info,
+        action: ToastAction(title: "Undo") { store.undoDelete() }
+    )
+)
+
+// Tapping the toast opens the run that just synced
+toast.present(
+    ToastMessage(title: "Run synced", type: .success, onTap: { router.push(.activity(id: id)) })
+)
+
+// Repeat events replace each other instead of stacking
+toast.present(ToastMessage(title: "GPS signal lost", type: .warning, groupID: "gps"))
+
+// Stays until you dismiss it by id
+toast.present(ToastMessage(title: "You're offline", type: .warning, isSticky: true))
+```
+
+Toasts can be flicked away — up from the top stack, down from the bottom. When the
+stack is full the least important toast makes way, so an error is never pushed off
+screen by a run of info messages.
+
+## Async loading 🧵
+
+```swift
+let run = try await toast.withLoading("Uploading run", determinate: true, cancellable: true,
+                                      errorTitle: "Upload failed") { report in
+    try await api.upload(run) { report($0) }   // 0...1
+}
+```
+
+The overlay appears, follows the progress, and is taken away on success, on a thrown
+error, and on cancellation — the usual way a loading overlay gets stuck on screen.
+
+## Haptics
+
+On by default for success, error and warning:
+
+```swift
+toast.hapticsEnabled = false                    // silence them
+toast.haptics = { type in myHaptics.play(type) } // or use your own
+```
 
 ---
 

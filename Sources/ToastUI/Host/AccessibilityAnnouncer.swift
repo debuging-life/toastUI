@@ -11,7 +11,7 @@ enum AccessibilityAnnouncer {
     @MainActor
     static func announce(_ text: String) {
         guard !text.isEmpty else { return }
-        #if os(iOS) || os(tvOS) || os(watchOS)
+        #if os(iOS) || os(tvOS)
         guard UIAccessibility.isVoiceOverRunning else { return }
         // A short delay lets the toast's own view land first, so the announcement
         // isn't cut off by the layout change VoiceOver also reports.
@@ -19,6 +19,10 @@ enum AccessibilityAnnouncer {
             try? await Task.sleep(for: .milliseconds(150))
             UIAccessibility.post(notification: .announcement, argument: text)
         }
+        #elseif os(watchOS)
+        // watchOS has no announcement API; the toast's own accessibility label is
+        // read when focus reaches it.
+        _ = text
         #elseif os(macOS)
         guard let window = NSApp.keyWindow else { return }
         NSAccessibility.post(

@@ -10,6 +10,7 @@ struct ToastView: View {
     let onDismiss: () -> Void
 
     @State private var showCopiedFeedback = false
+    @State private var dragOffset: CGFloat = 0
 
     private var surface: ToastSurface {
         if toast.type == .glass { return .glass }
@@ -33,6 +34,21 @@ struct ToastView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
+            if let action = toast.action {
+                Button(action.title) {
+                    action.handler()
+                    if action.dismissesToast { onDismiss() }
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(surface.foreground)
+                .buttonStyle(.plain)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule().fill(surface.foreground.opacity(0.15))
+                )
+            }
+
             actions
         }
         .padding(.horizontal, toast.configuration.horizontalPadding)
@@ -46,8 +62,48 @@ struct ToastView: View {
                      toast.configuration.shadowY)
         )
         .padding(.horizontal)
+        .offset(y: dragOffset)
+        .opacity(dragOpacity)
+        .contentShape(.rect)
+        .onTapGesture {
+            guard let onTap = toast.onTap else { return }
+            onTap()
+            onDismiss()
+        }
+        .gesture(dismissDrag)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(toast.accessibilityText)
+        .accessibilityAction(named: "Dismiss", onDismiss)
+    }
+
+    /// Flick a toast away: up for the top stack, down for the bottom one.
+    private var dismissDrag: some Gesture {
+        DragGesture(minimumDistance: 10)
+            .onChanged { value in
+                let translation = value.translation.height
+                switch toast.alignment {
+                case .top: dragOffset = min(translation, 12)
+                case .bottom: dragOffset = max(translation, -12)
+                case .center: dragOffset = translation / 3
+                }
+            }
+            .onEnded { value in
+                let translation = value.translation.height
+                let dismissed = switch toast.alignment {
+                case .top: translation < -40
+                case .bottom: translation > 40
+                case .center: abs(translation) > 60
+                }
+                if dismissed {
+                    onDismiss()
+                } else {
+                    withAnimation(.spring(duration: 0.25)) { dragOffset = 0 }
+                }
+            }
+    }
+
+    private var dragOpacity: Double {
+        max(1 - Double(abs(dragOffset)) / 60, 0.4)
     }
 
     // MARK: - Pieces
@@ -73,7 +129,7 @@ struct ToastView: View {
     @ViewBuilder
     private var actions: some View {
         HStack(spacing: 12) {
-            if toast.enableCopy {
+            if toast.enableCopy, Self.supportsClipboard {
                 Button(action: copyToClipboard) {
                     ZStack {
                         Image(systemName: "doc.on.doc")
@@ -100,6 +156,15 @@ struct ToastView: View {
     }
 
     // MARK: - Copy
+
+    /// watchOS has no pasteboard.
+    static var supportsClipboard: Bool {
+        #if os(iOS) || os(macOS)
+        true
+        #else
+        false
+        #endif
+    }
 
     private func copyToClipboard() {
         #if os(iOS)

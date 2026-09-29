@@ -38,6 +38,16 @@ public enum ToastType {
         }
     }
 
+    /// Used when the stack is full: a failure outranks an update.
+    var priority: Int {
+        switch self {
+        case .error: return 3
+        case .warning: return 2
+        case .success, .progress: return 1
+        case .info, .glass: return 0
+        }
+    }
+
     var color: Color {
         switch self {
         case .success: return .green

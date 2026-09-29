@@ -44,7 +44,7 @@ extension View {
             self.background(shape.fill(color.gradient)
                 .shadow(color: shadow.color, radius: shadow.radius, x: shadow.x, y: shadow.y))
         case .glass:
-            if #available(iOS 26.0, macOS 26.0, *) {
+            if #available(iOS 26.0, macOS 26.0, watchOS 26.0, tvOS 26.0, *) {
                 // The real thing, not a material standing in for it.
                 self.glassEffect(.regular, in: shape)
                     .shadow(color: shadow.color, radius: shadow.radius, x: shadow.x, y: shadow.y)

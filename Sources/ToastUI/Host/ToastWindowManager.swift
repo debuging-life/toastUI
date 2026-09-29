@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-#if canImport(UIKit)
+#if os(iOS) || os(tvOS)   // watchOS has no UIWindow; those platforms use the overlay host
 import UIKit
 
 @MainActor

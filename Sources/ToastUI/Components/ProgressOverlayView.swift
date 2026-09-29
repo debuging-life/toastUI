@@ -126,10 +126,17 @@ struct ProgressOverlayView: View {
         } else {
             // Default progress view with optional text
             VStack(spacing: 12) {
-                ProgressView()
-                    .progressViewStyle(.circular)
-                    .scaleEffect(1.5)
-                    .tint(textColor)
+                if let progress = overlay.progress {
+                    DeterminateRing(progress: progress, tint: textColor)
+                        .frame(width: 56, height: 56)
+                        .accessibilityLabel(overlay.title ?? "Progress")
+                        .accessibilityValue("\(Int(progress * 100)) percent")
+                } else {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .scaleEffect(1.5)
+                        .tint(textColor)
+                }
 
                 if let title = overlay.title {
                     Text(title)
@@ -147,12 +154,20 @@ struct ProgressOverlayView: View {
             }
         }
 
+        if let onCancel = overlay.onCancel {
+            Button("Cancel", action: onCancel)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(textColor)
+                .padding(.top, 4)
+        }
+
         if overlay.dismissible {
             Button(action: onDismiss) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.title2)
                     .foregroundStyle(textColor.opacity(0.7))
             }
+            .accessibilityLabel("Dismiss")
             .padding(.top, 8)
         }
     }
@@ -168,6 +183,27 @@ struct ProgressOverlayView: View {
             } else {
                 return .primary
             }
+        }
+    }
+}
+
+/// The ring used when the caller reports real progress.
+private struct DeterminateRing: View {
+    let progress: Double
+    let tint: Color
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(tint.opacity(0.2), lineWidth: 5)
+            Circle()
+                .trim(from: 0, to: max(min(progress, 1), 0))
+                .stroke(tint, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .animation(.easeOut(duration: 0.25), value: progress)
+            Text("\(Int((max(min(progress, 1), 0)) * 100))%")
+                .font(.caption.weight(.semibold).monospacedDigit())
+                .foregroundStyle(tint)
         }
     }
 }

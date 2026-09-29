@@ -18,8 +18,17 @@ class ToastWindowManager: ObservableObject {
     private var toastWindow: UIWindow?
     private var isSetup = false
     @Published var toastFrames: [UUID: CGRect] = [:] // Track toast positions
+    /// While a blocking progress overlay is up, the whole window takes touches.
+    @Published var isBlocking = false
 
     private init() {}
+
+    /// Drops frames for toasts that are gone. Without this their rectangles keep
+    /// swallowing touches, leaving dead zones on screen.
+    func pruneFrames(keeping ids: Set<UUID>) {
+        guard !toastFrames.isEmpty else { return }
+        toastFrames = toastFrames.filter { ids.contains($0.key) }
+    }
 
     func setup(with manager: ToastManager) {
         guard !isSetup else {
@@ -54,6 +63,7 @@ class ToastWindowManager: ObservableObject {
 
 // MARK: - Smart PassThrough Window
 
+@MainActor
 class ToastPassThroughWindow: UIWindow {
     weak var toastWindowManager: ToastWindowManager?
 
@@ -63,6 +73,11 @@ class ToastPassThroughWindow: UIWindow {
         }
 
         // Check if touch is within any toast frame
+        // A blocking overlay must swallow everything, not just its own rectangle.
+        if toastWindowManager?.isBlocking == true {
+            return hitView
+        }
+
         let touchIsOnToast = toastWindowManager?.toastFrames.values.contains(where: { frame in
             frame.contains(point)
         }) ?? false

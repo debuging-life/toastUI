@@ -7,18 +7,6 @@
 
 import SwiftUI
 
-//public extension View {
-//    /// Enables toast notifications for this view hierarchy
-//    /// Apply this to your root view (typically in your App struct)
-//    func setupToastUI() -> some View {
-//        modifier(ToastViewModifier(manager: ToastManager.shared))
-//    }
-//}
-
-
-
-import SwiftUI
-
 public extension View {
     /// Enables toast notifications for this view hierarchy
     /// Apply this to your root view (typically in your App struct)
@@ -34,7 +22,7 @@ private struct ToastSetupModifier: ViewModifier {
                 #if canImport(UIKit)
                 // Small delay to ensure window scene is ready
                 try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-                await ToastWindowManager.shared.setup(with: ToastManager.shared)
+                ToastWindowManager.shared.setup(with: ToastManager.shared)
                 #endif
             }
     }

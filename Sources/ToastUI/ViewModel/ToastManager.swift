@@ -7,14 +7,20 @@
 
 import SwiftUI
 
-public class ToastManager: ObservableObject, @unchecked Sendable {
+@MainActor
+public class ToastManager: ObservableObject {
     @Published public var toasts: [ToastMessage] = []
     @Published public var progressOverlay: ProgressOverlayMessage?
     private var workItems: [UUID: DispatchWorkItem] = [:]
 
-    public static let shared = ToastManager()
+    /// Nonisolated so it can be the default for `@Environment(\.toast)`; the
+    /// initialiser touches no main-actor state.
+    public nonisolated static let shared = ToastManager()
 
-    public init() {}
+    /// Toasts beyond this are dropped rather than queued forever.
+    public var maximumToasts = 5
+
+    public nonisolated init() {}
     
     // MARK: - Main Present Method
     
@@ -100,6 +106,13 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         // For non-progress toasts, add with animation
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             toasts.append(toast)
+            // Keep the stack bounded: the oldest in this alignment makes way.
+            while toasts.filter({ $0.alignment == toast.alignment }).count > maximumToasts,
+                  let oldest = toasts.first(where: { $0.alignment == toast.alignment }) {
+                workItems[oldest.id]?.cancel()
+                workItems.removeValue(forKey: oldest.id)
+                toasts.removeAll { $0.id == oldest.id }
+            }
         }
         
         // Cancel timers for all toasts in this alignment (they're no longer topmost)
@@ -125,6 +138,9 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             }
         }
         
+        // `.infinity` (or anything absurd) would trap DispatchTime maths; such a
+        // toast simply stays until it is dismissed.
+        guard toast.duration.isFinite, toast.duration > 0, toast.duration < 60 * 60 else { return }
         workItems[toast.id] = task
         DispatchQueue.main.asyncAfter(deadline: .now() + toast.duration, execute: task)
     }
@@ -316,13 +332,18 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
     // MARK: - Progress Overlay Methods
 
     /// Show progress overlay with default spinner
+    /// - Parameters:
+    ///   - progress: 0...1 for a determinate ring; nil keeps the spinner.
+    ///   - onCancel: shows a Cancel button, for uploads and long syncs.
     @MainActor
     public func showProgressOverlay(
         title: String? = nil,
         message: String? = nil,
         position: ProgressOverlayPosition = .center,
         configuration: ProgressOverlayConfiguration = .default,
-        dismissible: Bool = false
+        dismissible: Bool = false,
+        progress: Double? = nil,
+        onCancel: (() -> Void)? = nil
     ) {
         let overlay = ProgressOverlayMessage(
             title: title,
@@ -330,6 +351,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             position: position,
             configuration: configuration,
             dismissible: dismissible,
+            progress: progress,
+            onCancel: onCancel,
             onDismiss: { [weak self] in
                 self?.dismissProgressOverlay()
             }
@@ -347,6 +370,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         position: ProgressOverlayPosition = .center,
         configuration: ProgressOverlayConfiguration = .default,
         dismissible: Bool = false,
+        progress: Double? = nil,
+        onCancel: (() -> Void)? = nil,
         @ViewBuilder customView: () -> Content
     ) {
         let overlay = ProgressOverlayMessage(
@@ -356,6 +381,8 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
             configuration: configuration,
             customView: AnyView(customView()),
             dismissible: dismissible,
+            progress: progress,
+            onCancel: onCancel,
             onDismiss: { [weak self] in
                 self?.dismissProgressOverlay()
             }
@@ -363,6 +390,19 @@ public class ToastManager: ObservableObject, @unchecked Sendable {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             progressOverlay = overlay
         }
+    }
+
+    /// Updates the overlay that is already on screen, without re-animating it —
+    /// the way an upload reports 0%, 12%, 40%… Does nothing when none is showing.
+    @MainActor
+    public func updateProgressOverlay(progress: Double? = nil,
+                                      title: String? = nil,
+                                      message: String? = nil) {
+        guard var overlay = progressOverlay else { return }
+        if let progress { overlay.progress = min(max(progress, 0), 1) }
+        if let title { overlay.title = title }
+        if let message { overlay.message = message }
+        progressOverlay = overlay   // no withAnimation: the panel must not bounce on every tick
     }
 
     /// Dismiss progress overlay

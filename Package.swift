@@ -6,18 +6,26 @@ import PackageDescription
 let package = Package(
     name: "ToastUI",
     platforms: [
-        .iOS(.v16),
-        .macOS("13.1")
+        // iOS 17 / macOS 14: two-parameter `onChange`, Observation, and the Rive
+        // runtime's own floor.
+        .iOS(.v17),
+        .macOS(.v14)
     ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
+        /// The core library: toasts, progress overlays, dialogs. No dependencies.
         .library(
             name: "ToastUI",
             targets: ["ToastUI"]
         ),
+        /// Rive-powered icons, loading animations and celebrations.
+        /// Add this product only if you want Rive; it pulls in the Rive runtime.
+        .library(
+            name: "ToastUIRive",
+            targets: ["ToastUIRive"]
+        ),
     ],
     dependencies: [
-        // No external dependencies
+        .package(url: "https://github.com/rive-app/rive-ios", from: "6.0.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -25,6 +33,13 @@ let package = Package(
         .target(
             name: "ToastUI",
             dependencies: []
+        ),
+        .target(
+            name: "ToastUIRive",
+            dependencies: [
+                "ToastUI",
+                .product(name: "RiveRuntime", package: "rive-ios")
+            ]
         ),
         .testTarget(
             name: "ToastUITests",

@@ -58,6 +58,12 @@ struct ToastWindowRootView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: manager.toasts.map(\.id)) { _, ids in
+            windowManager.pruneFrames(keeping: Set(ids))
+        }
+        .onChange(of: manager.progressOverlay?.configuration.isBlocking ?? false) { _, blocking in
+            windowManager.isBlocking = blocking
+        }
     }
     
     @ViewBuilder

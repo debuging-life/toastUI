@@ -86,7 +86,7 @@ public extension ToastMessage {
     }
     
     // Helper method to update title
-    public mutating func updateTitle(_ newTitle: String) {
+    mutating func updateTitle(_ newTitle: String) {
         self.title = newTitle
     }
 }

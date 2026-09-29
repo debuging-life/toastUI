@@ -99,7 +99,7 @@ fileprivate struct DialogModifier<ViewContent: View>: ViewModifier {
             .transaction { transaction in
                 transaction.disablesAnimations = true
             }
-            .onChange(of: isPresented) { newValue in
+            .onChange(of: isPresented) { _, newValue in
                 if newValue {
                     internalPresented = true
                 } else if !isDismissing {

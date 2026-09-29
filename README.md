@@ -2,7 +2,7 @@
 
 A powerful notification system for SwiftUI with toasts, progress overlays, and dialogs - built with modern Swift concurrency and environment-based API.
 
-![Platform](https://img.shields.io/badge/platform-iOS%2016%2B%20%7C%20macOS%2013.1%2B-blue)
+![Platform](https://img.shields.io/badge/platform-iOS%2017%2B%20%7C%20macOS%2014%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-6.2+-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -19,6 +19,13 @@ A powerful notification system for SwiftUI with toasts, progress overlays, and d
 - **Multiple Toasts** - Stack with depth effect
 - **Smart Auto-dismiss** - Proper timer management
 
+### 🎞️ Rive Animations (optional `ToastUIRive` product)
+- **Animated icons** - any `.riv` file as a toast icon
+- **Animated loading** - a Rive loading animation, driven by real progress through a state-machine input
+- **Celebrations** - full-screen moments for streaks, personal bests and finished challenges
+- **Safe by default** - a missing file or Reduce Motion falls back to an SF Symbol instead of crashing
+- **Opt-in** - the core `ToastUI` product still has zero dependencies
+
 ### ⏳ Progress Overlay
 - **Independent System** - Separate from toasts for full-screen progress indication
 - **Highly Customizable** - Control size, colors, position, and style
@@ -28,6 +35,8 @@ A powerful notification system for SwiftUI with toasts, progress overlays, and d
 - **Blocking/Non-blocking** - Choose whether to block user interaction
 - **Clear Background** - Option for transparent background showing only content
 - **Dismissible** - Optional close button for user dismissal
+- **Determinate progress** - pass `progress: 0...1` for a percentage ring, and update it in place
+- **Cancellable** - pass `onCancel` for uploads and long syncs
 
 ### 💬 Dialog System
 - **Custom Dialogs** - Build with SwiftUI views
@@ -62,9 +71,95 @@ A powerful notification system for SwiftUI with toasts, progress overlays, and d
 Or in `Package.swift`:
 ```swift
 dependencies: [
-    .package(url: "https://github.com/debuging-life/ToastUI.git", from: "3.2.0")
+    .package(url: "https://github.com/debuging-life/ToastUI.git", from: "3.3.0")
 ]
 ```
+
+The package ships **two products**:
+
+| Product | Contents | Dependencies |
+| --- | --- | --- |
+| `ToastUI` | toasts, progress overlays, dialogs | none |
+| `ToastUIRive` | Rive icons, loading animations, celebrations | [rive-ios](https://github.com/rive-app/rive-ios) |
+
+Add `ToastUIRive` only if you want Rive; apps that don't never link the runtime.
+
+
+---
+
+## Rive Animations 🎞️
+
+Add the `ToastUIRive` product, drop your `.riv` files in the app bundle, and describe
+one with `RiveAnimationSource`:
+
+```swift
+import ToastUIRive
+
+let savedTick = RiveAnimationSource(
+    asset: "toast_success",            // toast_success.riv in your bundle
+    stateMachine: "State Machine 1",
+    fallbackSymbol: "checkmark.circle.fill"
+)
+```
+
+### Animated toast icon
+
+```swift
+@Environment(\.toast) var toast
+
+toast.presentRive(title: "Run saved", animation: savedTick, type: .success)
+```
+
+### Animated loading, driven by real progress
+
+Give the source a `progressInput` — a number input (0–100) in your state machine — and
+the animation follows the upload:
+
+```swift
+let uploading = RiveAnimationSource(
+    asset: "loading_ring",
+    progressInput: "progress",
+    fallbackSymbol: "arrow.up.circle"
+)
+
+toast.showRiveProgressOverlay(animation: uploading,
+                              title: "Uploading run",
+                              progress: 0,
+                              onCancel: { upload.cancel() })
+
+for await fraction in upload.progress {
+    toast.updateProgressOverlay(progress: fraction, title: "Uploading \(Int(fraction * 100))%")
+}
+
+toast.dismissProgressOverlay()
+```
+
+Leave `progress` nil for a looping animation with no percentage.
+
+### Celebration
+
+```swift
+toast.showRiveCelebration(
+    animation: RiveAnimationSource(asset: "celebrate_streak", fallbackSymbol: "flame.fill"),
+    title: "7-day streak",
+    message: "Keep it going tomorrow.",
+    actionTitle: "Nice!"
+)
+```
+
+### What it does for you
+
+- **Files load once** and are cached; view models are cheap after that.
+- **A missing or renamed `.riv` never crashes** — `RiveViewModel(fileName:)` force-tries
+  internally, so loading goes through the throwing API and falls back to the SF Symbol,
+  with one log line.
+- **Reduce Motion** skips Rive entirely and shows the symbol.
+- **Animations stop on disappear**, so Rive's display link doesn't keep running.
+
+> One gotcha from the Rive runtime: `RiveRuntime` exports its own `Color` type. In a file
+> that imports both it and SwiftUI, write `SwiftUI.Color` (this package exposes
+> `RiveToastColor` for that).
+
 
 ---
 
